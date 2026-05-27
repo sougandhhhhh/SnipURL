@@ -1,0 +1,238 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg-void: #080810;
+  --color-bg-surface: #0f0f1a;
+  --color-ghost-white: #e8eaf6;
+  --color-mist-purple: #7c6fa0;
+  --color-ecto-green: #39ff90;
+  --color-specter-blue: #a0c4ff;
+  --color-blood-dim: #3d0000;
+  --color-fog: rgba(232, 234, 246, 0.06);
+  --color-glass-border: rgba(232, 234, 246, 0.08);
+  --font-display: 'Cinzel Decorative', serif;
+  --font-body: 'Cormorant Garamond', serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-brand: 'Eater', cursive;
+  --font-title: 'Nosifer', cursive;
+}
+
+:root {
+  --bg-void: #080810;
+  --bg-surface: #0f0f1a;
+  --ghost-white: #e8eaf6;
+  --mist-purple: #7c6fa0;
+  --ecto-green: #39ff90;
+  --specter-blue: #a0c4ff;
+  --blood-dim: #3d0000;
+  --fog-opacity: rgba(232, 234, 246, 0.06);
+  --glass-border: rgba(232, 234, 246, 0.08);
+  --font-display: 'Cinzel Decorative', serif;
+  --font-body: 'Cormorant Garamond', serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-brand: 'Eater', cursive;
+  --font-title: 'Nosifer', cursive;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: auto;
+  background: var(--bg-void);
+}
+
+body {
+  background: var(--bg-void);
+  color: var(--ghost-white);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ====================================================
+  CUSTOM SCROLLBAR
+  ==================================================== */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-void);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ecto-green);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5affa6;
+}
+
+/* ====================================================
+  SELECTION
+  ==================================================== */
+::selection {
+  background: var(--ecto-green);
+  color: #000;
+}
+
+/* ====================================================
+  PAGE LOADER
+  ==================================================== */
+.page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: var(--bg-void);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+}
+.page-loader.hidden {
+  opacity: 0;
+}
+@keyframes pulse-ghost {
+  0%, 100% { opacity: 0.3; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes ghost-burst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ====================================================
+  NOISE OVERLAY
+  ==================================================== */
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99996;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  mix-blend-mode: overlay;
+}
+
+/* ====================================================
+  GLASSMORPHISM
+  ==================================================== */
+.glass {
+  background: var(--fog-opacity);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+}
+.glass-strong {
+  background: rgba(8, 8, 16, 0.7);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid var(--glass-border);
+}
+
+/* ====================================================
+  GHOST GLOW
+  ==================================================== */
+.glow-ecto {
+  box-shadow: 0 0 30px -5px rgba(57, 255, 144, 0.12);
+}
+.glow-ecto-strong {
+  box-shadow: 0 0 50px -5px rgba(57, 255, 144, 0.2);
+}
+
+/* ====================================================
+  BTN GHOST STYLE
+  ==================================================== */
+.btn-ghost {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 0.75rem 2rem;
+  border: 1px solid var(--ecto-green);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--ecto-green);
+  cursor: pointer;
+  transition: all 0.35s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-ghost:hover {
+  background: rgba(57, 255, 144, 0.06);
+  box-shadow: 0 0 30px rgba(57, 255, 144, 0.15);
+  transform: scale(1.03);
+}
+.btn-ghost:active {
+  transform: scale(0.97);
+}
+
+.btn-outline {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 0.75rem 2rem;
+  border: 1px solid var(--ghost-white);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--ghost-white);
+  cursor: pointer;
+  transition: all 0.35s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-outline:hover {
+  border-color: var(--specter-blue);
+  color: var(--specter-blue);
+  box-shadow: 0 0 25px rgba(160, 196, 255, 0.1);
+}
+.btn-outline:active {
+  transform: scale(0.97);
+}
+
+/* ====================================================
+  GHOST CARD
+  ==================================================== */
+.ghost-card {
+  background: var(--fog-opacity);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, box-shadow 0.4s ease;
+}
+.ghost-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(57, 255, 144, 0.15);
+  box-shadow: 0 20px 60px rgba(57, 255, 144, 0.04);
+}
+
+/* ====================================================
+  MISC
+  ==================================================== */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease forwards;
+}
+
+/* Splitting.js char base */
+.char {
+  display: inline-block;
+}
+
+
