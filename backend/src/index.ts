@@ -570,4 +570,53 @@ app.get('/api/v1/analytics/:linkId', authenticateApiKey, async (c) => {
   }
 });
 
+// F. Public Resolve Endpoint (no auth) — used by frontend catch-all redirect
+app.get('/api/v1/resolve/:code', async (c) => {
+  const code = c.req.param('code');
+  let linkData: any = null;
+
+  // Try KV cache first
+  if (c.env.KV) {
+    try {
+      const cached = await c.env.KV.get(`code:${code}`);
+      if (cached) linkData = JSON.parse(cached);
+    } catch {}
+  }
+
+  // Fallback to D1
+  if (!linkData) {
+    const db = drizzle(c.env.DB, { schema });
+    try {
+      const rows = await db
+        .select()
+        .from(schema.links)
+        .where(eq(schema.links.shortCode, code))
+        .limit(1);
+      if (rows.length > 0) {
+        const row = rows[0];
+        linkData = {
+          longUrl: row.longUrl,
+          password: row.password,
+          expiresAt: row.expiresAt,
+          isActive: row.isActive,
+        };
+      }
+    } catch {}
+  }
+
+  if (!linkData) {
+    return c.json({ error: 'Not found' }, 404);
+  }
+
+  if (!linkData.isActive || (linkData.expiresAt && Date.now() > linkData.expiresAt)) {
+    return c.json({ error: 'Expired' }, 410);
+  }
+
+  if (linkData.password) {
+    return c.json({ passwordProtected: true, shortCode: code }, 403);
+  }
+
+  return c.json({ longUrl: linkData.longUrl });
+});
+
 export default app;

@@ -97,7 +97,7 @@ export default function LandingPage() {
         customAlias: customAlias || undefined,
         password: password || undefined,
       });
-      const baseUrl = (process.env.NEXT_PUBLIC_API_URL || window.location.origin).replace(/\/+$/, '').trim();
+      const baseUrl = window.location.origin.replace(/\/+$/, '').trim();
       setResult({ shortUrl: `${baseUrl}/${link.shortCode}`, longUrl: link.longUrl, shortCode: link.shortCode });
       setGhostKey(k => k + 1);
       setLongUrl('');
