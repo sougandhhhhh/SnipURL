@@ -39,7 +39,7 @@ export default function DashboardPage() {
   };
 
   const handleCopy = (id: string, shortCode: string) => {
-    navigator.clipboard.writeText(`${origin}/${shortCode}`);
+    navigator.clipboard.writeText(`${origin.replace(/^https?:\/\//, '')}/${shortCode}`);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };

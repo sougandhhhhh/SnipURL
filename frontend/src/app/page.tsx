@@ -143,7 +143,7 @@ export default function LandingPage() {
                 onClick={() => window.open(result.shortUrl, '_blank')}
                 className="text-base text-ecto-green underline underline-offset-2 decoration-ecto-green/40 truncate cursor-pointer font-mono flex-1"
               >
-                {result.shortUrl}
+                {result.shortUrl.replace(/^https?:\/\//, '')}
               </span>
               <button onClick={handleCopy} className="text-ecto-green hover:text-ecto-green/80 shrink-0 p-1.5">
                 {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
