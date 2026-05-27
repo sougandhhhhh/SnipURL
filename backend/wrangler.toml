@@ -1,8 +1,11 @@
+name = "snipurl"
+compatibility_date = "2025-04-01"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "snapurl-db"
-database_id = "0bde5f6f-1d88-4eec-bc7f-1ea67bbcccce"  # From creation output
+database_id = "0bde5f6f-1d88-4eec-bc7f-1ea67bbcccce"
 
 [vars]
-FRONTEND_URL = "http://localhost:3000"
+FRONTEND_URL = "https://snip-url-gray.vercel.app"
 SERVICE_API_KEY = "su_dev_bootstrap_key"
