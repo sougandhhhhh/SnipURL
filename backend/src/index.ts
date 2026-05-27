@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, and, sql, desc } from 'drizzle-orm';
 import * as schema from './db/schema';
-import { generateShortCode, validateUrl, isSpamOrMalicious } from './utils/helpers';
+import { encodeSequential, validateUrl, isSpamOrMalicious } from './utils/helpers';
 
 interface Env {
   DB: D1Database;
@@ -236,24 +236,12 @@ app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
         return c.json({ error: 'Custom alias already in use' }, 409);
       }
     } else {
-      // Base62 random short code loop with collision handling
-      let collision = true;
-      let retries = 0;
-      while (collision && retries < 5) {
-        shortCode = generateShortCode();
-        const existing = await db
-          .select()
-          .from(schema.links)
-          .where(eq(schema.links.shortCode, shortCode))
-          .limit(1);
-        if (existing.length === 0) {
-          collision = false;
-        }
-        retries++;
-      }
-      if (collision) {
-        return c.json({ error: 'Failed to generate a unique short code, please retry' }, 500);
-      }
+      // Sequential short code (a, b, c, ..., z, aa, ab, ...)
+      const countResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(schema.links);
+      const totalCount = Number(countResult[0]?.count ?? 0);
+      shortCode = encodeSequential(totalCount + 1);
     }
 
     const newLink = {

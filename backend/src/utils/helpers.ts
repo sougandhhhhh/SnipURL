@@ -1,16 +1,15 @@
-const BASE62_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
 /**
- * Generates a random 6-character Base62 short code.
- * Provides 62^6 = ~56.8 Billion variations.
+ * Encodes a positive integer to a base-26 string (a-z).
+ * 1 → a, 2 → b, ..., 26 → z, 27 → aa, 28 → ab, ...
  */
-export function generateShortCode(length = 6): string {
+export function encodeSequential(n: number): string {
   let result = '';
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * 62);
-    result += BASE62_CHARS[randomIndex];
+  while (n > 0) {
+    n--;
+    result = String.fromCharCode(97 + (n % 26)) + result;
+    n = Math.floor(n / 26);
   }
-  return result;
+  return result || 'a';
 }
 
 /**
