@@ -340,9 +340,6 @@ export default function LandingPage() {
             <Link href="/login?tab=register" className="btn-ghost">
               Summon Now
             </Link>
-            <Link href="/pricing" className="btn-outline">
-              View Pricing
-            </Link>
           </div>
         </div>
       </section>

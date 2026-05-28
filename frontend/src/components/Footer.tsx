@@ -43,8 +43,8 @@ export default function Footer() {
           </div>
 
           {[
-            { title: 'Venture', links: ['Features', 'Pricing', 'Redirects', 'Enterprise'] },
-            { title: 'Developer', links: ['API Docs', 'API Keys', 'Status', 'Limits'] },
+            { title: 'Venture', links: ['Redirects', 'Enterprise'] },
+            { title: 'Developer', links: ['API Keys', 'Status', 'Limits'] },
           ].map(group => (
             <div key={group.title} className="space-y-4">
               <h4 className="font-mono text-[10px] tracking-[0.15em] uppercase text-ecto-green/60">

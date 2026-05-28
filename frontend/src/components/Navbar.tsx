@@ -25,11 +25,7 @@ export default function Navbar() {
         { name: 'API Keys', href: '/settings' },
         ...(user.role === 'admin' ? [{ name: 'Admin', href: '/admin' }] : []),
       ]
-    : [
-        { name: 'Features', href: '/#features' },
-        { name: 'Pricing', href: '/pricing' },
-        { name: 'API Docs', href: '/api-docs' },
-      ];
+    : [];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 py-3 sm:py-4" style={{ willChange: 'transform' }}>
