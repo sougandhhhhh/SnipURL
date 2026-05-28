@@ -14,3 +14,5 @@ coverage/
 *.tsbuildinfo
 next-env.d.ts
 redirectforsnipul/
+
+.vercel
