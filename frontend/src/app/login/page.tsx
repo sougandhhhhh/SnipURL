@@ -109,9 +109,6 @@ function AuthContent() {
               </button>
             </div>
 
-            <div className="mt-4 rounded-xl bg-ecto-green/[0.03] border border-ecto-green/10 p-3 font-mono text-[9px] text-ecto-green/50 text-center leading-relaxed">
-              Use "admin" in your email to unlock admin view.
-            </div>
           </>
         )}
       </div>
