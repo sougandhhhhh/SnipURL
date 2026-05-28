@@ -273,7 +273,8 @@ app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
       console.error('KV seed error (non-fatal):', kvErr);
     }
 
-    const shortUrl = `${c.req.url.replace('/api/v1/shorten', '')}/${shortCode}`;
+    const displayDomain = (c.env.FRONTEND_URL || '').replace(/\/+$/, '').trim() || c.req.url.replace('/api/v1/shorten', '');
+    const shortUrl = `${displayDomain}/${shortCode}`;
     return c.json({
       success: true,
       id: newLink.id,
