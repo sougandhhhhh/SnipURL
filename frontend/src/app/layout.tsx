@@ -40,10 +40,7 @@ export const metadata: Metadata = {
   title: 'SnipURL',
   description: 'SnipURL — an ethereal, edge-deployed URL shortener with ghost-light redirects and spectral analytics.',
   keywords: 'url shortener, link shortener, ghost theme, edge computing, analytics, snapurl',
-  icons: {
-    icon: '/logo.svg',
-  },
-  openGraph: {
+    openGraph: {
     title: 'SnipURL',
     description: 'Ethereal edge-deployed URL shortener with ghost-light redirects.',
     type: 'website',
