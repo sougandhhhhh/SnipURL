@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSnapStore } from '../context/store';
-import { ArrowRight, ChevronDown, Copy, Check, Download, Globe, BarChart3, Code2, Lock, Calendar, QrCode } from 'lucide-react';
+import ExpandForm from '../components/ExpandForm';
+import { ArrowRight, ChevronDown, Copy, Check, Download, Globe, BarChart3, Code2, Lock, Calendar, QrCode, ExternalLink, Scissors } from 'lucide-react';
 
 const features = [
   { icon: Globe, title: 'Edge Redirect Engine', desc: 'Cloudflare KV memory caching processes redirects in milliseconds from edge nodes near your visitors.' },
@@ -80,6 +81,7 @@ function GhostBurst() {
 
 export default function LandingPage() {
   const { shortenUrl, loading, user } = useSnapStore();
+  const [mode, setMode] = useState<'shorten' | 'expand'>('shorten');
   const [longUrl, setLongUrl] = useState('');
   const [customAlias, setCustomAlias] = useState('');
   const [password, setPassword] = useState('');
@@ -88,6 +90,11 @@ export default function LandingPage() {
   const [copied, setCopied] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [ghostKey, setGhostKey] = useState(0);
+  const [origin, setOrigin] = useState('');
+
+  useEffect(() => {
+    setOrigin((process.env.NEXT_PUBLIC_DISPLAY_DOMAIN || window.location.origin).replace(/\/+$/, '').trim());
+  }, []);
 
   const handleShorten = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,57 +208,84 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SHORTENER */}
+      {/* SHORTENER / EXPANDER */}
       <section className="mx-auto max-w-2xl px-4 mt-12 sm:px-6">
         <div className="glass rounded-2xl p-6 sm:p-8 glow-ecto">
-          <form onSubmit={handleShorten} className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="url"
-                required
-                value={longUrl}
-                onChange={e => setLongUrl(e.target.value)}
-                placeholder="Paste a long URL..."
-                className="flex-1 h-12 rounded-full bg-white/[0.04] border border-glass-border px-5 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-ghost justify-center h-12 px-6 text-[10px]"
-              >
-                {loading ? 'Summoning...' : 'Shorten'}
-                <ArrowRight className="h-3 w-3" />
-              </button>
-            </div>
-
+          <div className="flex border-b border-glass-border mb-6 -mx-1">
             <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="font-mono text-[10px] tracking-[0.15em] uppercase text-ghost-white/30 hover:text-ecto-green/60 transition-colors flex items-center gap-1.5"
+              onClick={() => setMode('shorten')}
+              className={`flex-1 pb-3 px-4 font-mono text-[10px] tracking-[0.15em] uppercase transition-colors relative ${
+                mode === 'shorten' ? 'text-ecto-green' : 'text-ghost-white/30 hover:text-ghost-white/60'
+              }`}
             >
-              <ChevronDown className={`h-3 w-3 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-              {showAdvanced ? 'Hide options' : 'Alias & protection'}
+              <Scissors className="h-3 w-3 inline mr-1.5 -mt-0.5" />
+              Shorten
+              {mode === 'shorten' && <span className="absolute bottom-0 left-4 right-4 h-[1px] bg-ecto-green shadow-[0_0_6px_rgba(57,255,144,0.5)]" />}
             </button>
+            <button
+              onClick={() => setMode('expand')}
+              className={`flex-1 pb-3 px-4 font-mono text-[10px] tracking-[0.15em] uppercase transition-colors relative ${
+                mode === 'expand' ? 'text-ecto-green' : 'text-ghost-white/30 hover:text-ghost-white/60'
+              }`}
+            >
+              <ExternalLink className="h-3 w-3 inline mr-1.5 -mt-0.5" />
+              Expand
+              {mode === 'expand' && <span className="absolute bottom-0 left-4 right-4 h-[1px] bg-ecto-green shadow-[0_0_6px_rgba(57,255,144,0.5)]" />}
+            </button>
+          </div>
 
-            {showAdvanced && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          {mode === 'shorten' ? (
+            <form onSubmit={handleShorten} className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
-                  type="text"
-                  value={customAlias}
-                  onChange={e => setCustomAlias(e.target.value)}
-                  placeholder="Custom alias (e.g. my-link)"
-                  className="h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+                  type="url"
+                  required
+                  value={longUrl}
+                  onChange={e => setLongUrl(e.target.value)}
+                  placeholder="Paste a long URL..."
+                  className="flex-1 h-12 rounded-full bg-white/[0.04] border border-glass-border px-5 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
                 />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Password protect"
-                  className="h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
-                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-ghost justify-center h-12 px-6 text-[10px]"
+                >
+                  {loading ? 'Summoning...' : 'Shorten'}
+                  <ArrowRight className="h-3 w-3" />
+                </button>
               </div>
-            )}
-          </form>
+
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="font-mono text-[10px] tracking-[0.15em] uppercase text-ghost-white/30 hover:text-ecto-green/60 transition-colors flex items-center gap-1.5"
+              >
+                <ChevronDown className={`h-3 w-3 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+                {showAdvanced ? 'Hide options' : 'Alias & protection'}
+              </button>
+
+              {showAdvanced && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <input
+                    type="text"
+                    value={customAlias}
+                    onChange={e => setCustomAlias(e.target.value)}
+                    placeholder="Custom alias (e.g. my-link)"
+                    className="h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+                  />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="Password protect"
+                    className="h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+                  />
+                </div>
+              )}
+            </form>
+          ) : (
+            <ExpandForm origin={origin} />
+          )}
         </div>
       </section>
 

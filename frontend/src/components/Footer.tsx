@@ -44,7 +44,7 @@ export default function Footer() {
 
           {[
             { title: 'Venture', links: ['Redirects', 'Enterprise'] },
-            { title: 'Developer', links: ['API Keys', 'Status', 'Limits'] },
+            { title: 'Developer', links: ['API Keys', 'Status', 'Expand'] },
           ].map(group => (
             <div key={group.title} className="space-y-4">
               <h4 className="font-mono text-[10px] tracking-[0.15em] uppercase text-ecto-green/60">
@@ -53,9 +53,9 @@ export default function Footer() {
               <ul className="space-y-2">
                 {group.links.map(link => (
                   <li key={link}>
-                    <a href="#" className="font-body text-sm text-ghost-white/40 hover:text-ghost-white transition-colors">
+                    <Link href={link === 'Expand' ? '/expand' : '#'} className="font-body text-sm text-ghost-white/40 hover:text-ghost-white transition-colors">
                       {link}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

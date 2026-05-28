@@ -22,6 +22,7 @@ export default function Navbar() {
     ? [
         { name: 'Dashboard', href: '/dashboard' },
         { name: 'Analytics', href: '/analytics' },
+        { name: 'Expand', href: '/expand' },
         { name: 'API Keys', href: '/settings' },
         ...(user.role === 'admin' ? [{ name: 'Admin', href: '/admin' }] : []),
       ]

@@ -57,6 +57,7 @@ interface SnapStore {
 
   // Link Operations
   shortenUrl: (longUrl: string, options?: { customAlias?: string; password?: string; expiresAt?: number }) => Promise<Link>;
+  expandUrl: (code: string) => Promise<{ longUrl: string } | { passwordProtected: boolean; shortCode: string }>;
   updateLink: (id: string, updates: Partial<Pick<Link, 'longUrl' | 'isActive' | 'password' | 'expiresAt'>>) => Promise<boolean>;
   deleteLink: (id: string) => Promise<boolean>;
   toggleLinkActive: (id: string) => Promise<boolean>;
@@ -355,6 +356,11 @@ export const useSnapStore = create<SnapStore>((set, get) => {
         set({ loading: false });
         throw error;
       }
+    },
+
+    expandUrl: async (code) => {
+      const cleanCode = code.replace(/^https?:\/\/[^\/]+\//, '').replace(/^\/+/, '').replace(/\/+$/, '');
+      return apiFetch(`/api/v1/resolve/${encodeURIComponent(cleanCode)}`);
     },
 
     updateLink: async (id, updates) => {
