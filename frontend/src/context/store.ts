@@ -248,12 +248,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
   // Build Store State
   const initialLinks = getLocalStorage<Link[]>('snap-links', initialMockLinks);
   const initialClicks = getLocalStorage<ClickLog[]>('snap-clicks', mockSeedClicks);
-  const initialUser = getLocalStorage<User | null>('snap-user', {
-    id: 'user-default',
-    email: 'hello@snapurl.co',
-    name: 'Sougandh',
-    role: 'admin' // Initial admin role to easily review admin pages out of the box!
-  });
+  const initialUser = getLocalStorage<User | null>('snap-user', null);
   const initialKeys = getLocalStorage<ApiKey[]>('snap-apikeys', [
     {
       id: 'key-1',
