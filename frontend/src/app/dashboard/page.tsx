@@ -22,7 +22,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
-    setOrigin(window.location.origin.replace(/\/+$/, '').trim());
+    setOrigin((process.env.NEXT_PUBLIC_DISPLAY_DOMAIN || window.location.origin).replace(/\/+$/, '').trim());
     fetchLinks();
   }, [user, router, fetchLinks]);
 
