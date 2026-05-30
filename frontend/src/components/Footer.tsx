@@ -42,25 +42,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {[
-            { title: 'Venture', links: ['Redirects', 'Enterprise'] },
-            { title: 'Developer', links: ['API Keys', 'Status', 'Expand'] },
-          ].map(group => (
-            <div key={group.title} className="space-y-4">
-              <h4 className="font-mono text-[10px] tracking-[0.15em] uppercase text-ecto-green/60">
-                {group.title}
-              </h4>
-              <ul className="space-y-2">
-                {group.links.map(link => (
-                  <li key={link}>
-                    <Link href={link === 'Expand' ? '/expand' : '#'} className="font-body text-sm text-ghost-white/40 hover:text-ghost-white transition-colors">
-                      {link}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+
 
           <div className="space-y-4">
             <h4 className="font-mono text-[10px] tracking-[0.15em] uppercase text-ecto-green/60">
