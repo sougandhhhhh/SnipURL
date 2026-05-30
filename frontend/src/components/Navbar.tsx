@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSnapStore } from '../context/store';
-import { Menu, X, User as UserIcon } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -57,15 +57,9 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
-              <div className="flex items-center space-x-3">
-                <span className="text-xs font-mono text-ghost-white/50 flex items-center gap-1.5">
-                  <UserIcon className="h-3 w-3" />
-                  <span className="max-w-[80px] truncate">{user.name}</span>
-                </span>
-                <button onClick={logout} className="font-mono text-[10px] tracking-[0.15em] uppercase text-ecto-green/70 hover:text-ecto-green transition-colors">
-                  Exit
-                </button>
-              </div>
+              <button onClick={logout} className="font-mono text-[10px] tracking-[0.15em] uppercase text-red-400/70 hover:text-red-400 border border-red-400/30 hover:border-red-400 rounded-full px-4 py-1.5 transition-colors">
+                Logout
+              </button>
             ) : (
               <Link href="/login" className="btn-ghost text-[10px] py-2 px-5">
                 Sign In / Sign Up
@@ -95,8 +89,8 @@ export default function Navbar() {
           ))}
           <div className="border-t border-glass-border pt-3 mt-3">
             {user ? (
-              <button onClick={() => { logout(); setMobileOpen(false); }} className="w-full text-center text-[10px] font-mono tracking-[0.15em] uppercase text-ecto-green/70 py-2">
-                Exit
+              <button onClick={() => { logout(); setMobileOpen(false); }} className="w-full text-center text-[10px] font-mono tracking-[0.15em] uppercase text-red-400/70 border border-red-400/30 rounded-full py-2">
+                Logout
               </button>
             ) : (
               <Link href="/login" onClick={() => setMobileOpen(false)} className="block text-center btn-ghost text-[10px] py-2 justify-center">
