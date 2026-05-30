@@ -12,13 +12,22 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // Try getSession with retries (OAuth needs time to process the URL hash)
-      for (let i = 0; i < 10; i++) {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (session?.user) {
+      // Extract auth params from URL hash (OAuth redirect)
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+
+      if (accessToken) {
+        setStatus('Exchanging token...');
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || '',
+        });
+        if (data?.session?.user) {
           setStatus('Signing in...');
           try {
-            await syncSupabaseUser(session.user);
+            await syncSupabaseUser(data.session.user);
             router.push('/dashboard');
             return;
           } catch {
@@ -30,11 +39,26 @@ export default function AuthCallback() {
           router.push('/login');
           return;
         }
-        // Wait before retrying
-        await new Promise(r => setTimeout(r, 500));
       }
 
-      // Listen for auth state as fallback
+      // Fallback: try getSession
+      for (let i = 0; i < 5; i++) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setStatus('Signing in...');
+          try {
+            await syncSupabaseUser(session.user);
+            router.push('/dashboard');
+            return;
+          } catch {
+            router.push('/login');
+            return;
+          }
+        }
+        await new Promise(r => setTimeout(r, 600));
+      }
+
+      // Last resort: listen for auth state
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           subscription.unsubscribe();
@@ -48,7 +72,6 @@ export default function AuthCallback() {
         }
       });
 
-      // Timeout after 10s
       setTimeout(() => {
         subscription.unsubscribe();
         router.push('/login');
@@ -59,10 +82,8 @@ export default function AuthCallback() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-ecto-green/50 animate-pulse">
-          {status}
-        </div>
+      <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-ecto-green/50 animate-pulse">
+        {status}
       </div>
     </div>
   );
