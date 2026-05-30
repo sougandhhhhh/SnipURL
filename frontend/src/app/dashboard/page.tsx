@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSnapStore, Link as LinkType } from '../../context/store';
-import { Copy, Check, QrCode, Trash2, Search, X, Lock, ExternalLink, Download } from 'lucide-react';
+import { Copy, Check, QrCode, Trash2, Search, X, Lock, ExternalLink, Download, ChevronDown } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -15,12 +15,20 @@ export default function DashboardPage() {
   const [editingLink, setEditingLink] = useState<LinkType | null>(null);
   const [editUrl, setEditUrl] = useState('');
   const [origin, setOrigin] = useState('');
+  const [showAll, setShowAll] = useState(false);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
     setOrigin((process.env.NEXT_PUBLIC_DISPLAY_DOMAIN || window.location.origin).replace(/\/+$/, '').trim());
     fetchLinks();
   }, [user, router, fetchLinks]);
+
+  useEffect(() => {
+    if (!message) return;
+    const t = setTimeout(() => setMessage(''), 2000);
+    return () => clearTimeout(t);
+  }, [message]);
 
   const handleCopy = (id: string, shortCode: string) => {
     navigator.clipboard.writeText(`${origin.replace(/^https?:\/\//, '')}/${shortCode}`);
@@ -29,7 +37,17 @@ export default function DashboardPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Permanently purge this shortened link?')) await deleteLink(id);
+    if (confirm('Permanently purge this shortened link?')) {
+      await deleteLink(id);
+      setMessage('Link deleted');
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingLink) return;
+    await updateLink(editingLink.id, { longUrl: editUrl });
+    setEditingLink(null);
+    setMessage('Link updated');
   };
 
   const filteredLinks = links.filter(link =>
@@ -37,6 +55,8 @@ export default function DashboardPage() {
   ).filter(link =>
     search === '' || link.shortCode.toLowerCase().includes(search.toLowerCase()) || link.longUrl.toLowerCase().includes(search.toLowerCase()) || (link.customAlias?.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const displayLinks = showAll ? filteredLinks : filteredLinks.slice(0, 10);
 
   if (!user) return null;
 
@@ -64,6 +84,13 @@ export default function DashboardPage() {
         {search && <button onClick={() => setSearch('')} className="text-ghost-white/30 hover:text-ghost-white"><X className="h-4 w-4" /></button>}
       </div>
 
+      {/* TOAST MESSAGE */}
+      {message && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 glass rounded-full px-6 py-3 text-xs font-mono text-ecto-green animate-fade-in">
+          {message}
+        </div>
+      )}
+
       {/* LINK LIST */}
       {filteredLinks.length === 0 ? (
         <div className="glass rounded-2xl p-16 text-center space-y-4">
@@ -73,7 +100,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredLinks.map(link => {
+          {displayLinks.map(link => {
             const isExpired = link.expiresAt && Date.now() > link.expiresAt;
             return (
               <div key={link.id} className={`ghost-card p-5 ${link.isActive && !isExpired ? '' : 'opacity-60'}`}>
@@ -94,7 +121,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2 mt-2">
                         <input type="url" value={editUrl} onChange={e => setEditUrl(e.target.value)}
                           className="flex-1 h-8 rounded-full bg-white/[0.04] border border-glass-border px-3 text-xs text-ghost-white outline-none focus:border-ecto-green/40 font-body" />
-                        <button onClick={async () => { if (editingLink) { await updateLink(editingLink.id, { longUrl: editUrl }); setEditingLink(null); }}}
+                        <button onClick={handleSaveEdit}
                           className="font-mono text-[9px] tracking-[0.15em] uppercase text-ecto-green hover:text-ecto-green/80">Save</button>
                         <button onClick={() => setEditingLink(null)} className="font-mono text-[9px] tracking-[0.15em] uppercase text-ghost-white/30 hover:text-ghost-white/60">Cancel</button>
                       </div>
@@ -109,6 +136,8 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-2 self-stretch sm:self-auto border-t border-glass-border sm:border-none pt-3 sm:pt-0">
+                    <button onClick={() => { setEditingLink(link); setEditUrl(link.longUrl); }}
+                      className="font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 hover:text-ecto-green/60 border border-glass-border rounded-lg px-2.5 py-1.5 transition-colors">Edit</button>
                     <button onClick={() => handleCopy(link.id, link.shortCode)}
                       className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors" title="Copy">
                       {copiedId === link.id ? <Check className="h-3.5 w-3.5 text-ecto-green" /> : <Copy className="h-3.5 w-3.5" />}
@@ -121,9 +150,6 @@ export default function DashboardPage() {
                       className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors inline-flex" title="Open link">
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
-                    <button onClick={() => { setEditingLink(link); setEditUrl(link.longUrl); }}
-                      className="font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 hover:text-ecto-green/60 border border-glass-border rounded-lg px-2.5 py-1.5 transition-colors">Edit</button>
-
                     <button onClick={() => handleDelete(link.id)}
                       className="rounded-lg bg-white/[0.04] p-2 text-red-400/50 hover:text-red-400 border border-glass-border transition-colors" title="Delete">
                       <Trash2 className="h-3.5 w-3.5" />
@@ -133,6 +159,12 @@ export default function DashboardPage() {
               </div>
             );
           })}
+          {filteredLinks.length > 10 && !showAll && (
+            <button onClick={() => setShowAll(true)}
+              className="w-full glass rounded-xl py-3 text-center font-mono text-[10px] tracking-[0.15em] uppercase text-ecto-green/60 hover:text-ecto-green transition-colors flex items-center justify-center gap-2">
+              <ChevronDown className="h-3 w-3" /> Show all ({filteredLinks.length - 10} more)
+            </button>
+          )}
         </div>
       )}
 
