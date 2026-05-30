@@ -300,6 +300,7 @@ app.get('/api/v1/links', authenticateApiKey, async (c) => {
     const list = await db
       .select({
         id: schema.links.id,
+        userId: schema.links.userId,
         shortCode: schema.links.shortCode,
         longUrl: schema.links.longUrl,
         customAlias: schema.links.customAlias,
