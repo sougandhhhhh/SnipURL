@@ -57,7 +57,7 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
-              <button onClick={logout} className="font-mono text-[10px] tracking-[0.15em] uppercase text-red-400/70 hover:text-red-400 border border-red-400/30 hover:border-red-400 rounded-full px-4 py-1.5 transition-colors">
+              <button onClick={() => { if (confirm('Sign out of SnipURL?')) logout(); }} className="font-mono text-[10px] tracking-[0.15em] uppercase text-red-400/70 hover:text-red-400 border border-red-400/30 hover:border-red-400 rounded-full px-4 py-1.5 transition-colors">
                 Logout
               </button>
             ) : (
@@ -89,7 +89,7 @@ export default function Navbar() {
           ))}
           <div className="border-t border-glass-border pt-3 mt-3">
             {user ? (
-              <button onClick={() => { logout(); setMobileOpen(false); }} className="w-full text-center text-[10px] font-mono tracking-[0.15em] uppercase text-red-400/70 border border-red-400/30 rounded-full py-2">
+              <button onClick={() => { if (confirm('Sign out of SnipURL?')) { logout(); setMobileOpen(false); } }} className="w-full text-center text-[10px] font-mono tracking-[0.15em] uppercase text-red-400/70 border border-red-400/30 rounded-full py-2">
                 Logout
               </button>
             ) : (
