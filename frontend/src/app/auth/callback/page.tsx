@@ -19,63 +19,21 @@ export default function AuthCallback() {
       const refreshToken = params.get('refresh_token');
 
       if (accessToken) {
-        setStatus('Exchanging token...');
-        const { data, error } = await supabase.auth.setSession({
+        await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || '',
         });
-        if (data?.session?.user) {
-          setStatus('Signing in...');
-          try {
-            await syncSupabaseUser(data.session.user);
-            router.push('/dashboard');
-            return;
-          } catch {
-            router.push('/login');
-            return;
-          }
-        }
-        if (error) {
-          router.push('/login');
-          return;
-        }
       }
 
-      // Fallback: try getSession
-      for (let i = 0; i < 5; i++) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          setStatus('Signing in...');
-          try {
-            await syncSupabaseUser(session.user);
-            router.push('/dashboard');
-            return;
-          } catch {
-            router.push('/login');
-            return;
-          }
-        }
-        await new Promise(r => setTimeout(r, 600));
-      }
-
-      // Last resort: listen for auth state
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          subscription.unsubscribe();
-          setStatus('Signing in...');
-          try {
-            await syncSupabaseUser(session.user);
-            router.push('/dashboard');
-          } catch {
-            router.push('/login');
-          }
-        }
-      });
-
-      setTimeout(() => {
-        subscription.unsubscribe();
+      // Now get the session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setStatus('Signing in...');
+        await syncSupabaseUser(session.user);
+        router.push('/dashboard');
+      } else {
         router.push('/login');
-      }, 10000);
+      }
     };
     handleCallback();
   }, [router, syncSupabaseUser]);
