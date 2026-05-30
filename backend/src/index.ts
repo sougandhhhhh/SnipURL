@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, or, sql, desc } from 'drizzle-orm';
 import * as schema from './db/schema';
 import { encodeSequential, validateUrl, isSpamOrMalicious } from './utils/helpers';
 
@@ -311,7 +311,7 @@ app.get('/api/v1/links', authenticateApiKey, async (c) => {
       })
       .from(schema.links)
       .leftJoin(schema.analytics, eq(schema.analytics.linkId, schema.links.id))
-      .where(eq(schema.links.userId, userId))
+      .where(or(eq(schema.links.userId, userId), eq(schema.links.userId, 'user-default')))
       .groupBy(
         schema.links.id,
         schema.links.shortCode,
