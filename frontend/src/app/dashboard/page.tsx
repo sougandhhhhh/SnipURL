@@ -28,10 +28,6 @@ export default function DashboardPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleToggleActive = async (link: LinkType) => {
-    await updateLink(link.id, { isActive: !link.isActive });
-  };
-
   const handleDelete = async (id: string) => {
     if (confirm('Permanently purge this shortened link?')) await deleteLink(id);
   };
@@ -130,14 +126,7 @@ export default function DashboardPage() {
                     </a>
                     <button onClick={() => { setEditingLink(link); setEditUrl(link.longUrl); }}
                       className="font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 hover:text-ecto-green/60 border border-glass-border rounded-lg px-2.5 py-1.5 transition-colors">Edit</button>
-                    <button onClick={() => handleToggleActive(link)}
-                      className={`rounded-lg p-1.5 border transition-colors ${link.isActive ? 'text-ecto-green border-ecto-green/30' : 'text-ghost-white/20 border-glass-border'}`} title="Toggle">
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        {link.isActive
-                          ? <><rect x="1" y="5" width="22" height="14" rx="7" /><circle cx="16" cy="12" r="3" fill="currentColor" /></>
-                          : <><rect x="1" y="5" width="22" height="14" rx="7" /><circle cx="8" cy="12" r="3" fill="currentColor" /></>}
-                      </svg>
-                    </button>
+
                     <button onClick={() => handleDelete(link.id)}
                       className="rounded-lg bg-white/[0.04] p-2 text-red-400/50 hover:text-red-400 border border-glass-border transition-colors" title="Delete">
                       <Trash2 className="h-3.5 w-3.5" />
