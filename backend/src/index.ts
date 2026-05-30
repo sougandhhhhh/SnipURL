@@ -561,17 +561,17 @@ app.get('/api/v1/analytics/:linkId', authenticateApiKey, async (c) => {
 
 // F. Supabase Auth Endpoint (no auth) — creates/links user + returns API key
 app.post('/api/v1/auth/supabase', async (c) => {
-  const body = await c.req.json();
-  const { supabaseId, email, name } = body;
-  if (!supabaseId || !email) {
-    return c.json({ error: 'supabaseId and email required' }, 400);
-  }
-
-  const db = drizzle(c.env.DB, { schema });
-  const displayName = name || email.split('@')[0] || 'User';
-  const now = Date.now();
-
   try {
+    const body = await c.req.json();
+    const { supabaseId, email, name } = body;
+    if (!supabaseId || !email) {
+      return c.json({ error: 'supabaseId and email required' }, 400);
+    }
+
+    const db = drizzle(c.env.DB, { schema });
+    const displayName = name || email.split('@')[0] || 'User';
+    const now = Date.now();
+
     let [existingUser] = await db
       .select()
       .from(schema.users)
@@ -621,7 +621,7 @@ app.post('/api/v1/auth/supabase', async (c) => {
       rawKey,
     }, 201);
   } catch (err: any) {
-    return c.json({ error: err.message || 'Error processing Supabase auth' }, 500);
+    return c.json({ error: err.message || err?.toString() || 'Error processing Supabase auth' }, 500);
   }
 });
 

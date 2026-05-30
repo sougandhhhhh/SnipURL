@@ -224,7 +224,12 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     const stored = localStorage.getItem('snap-service-key');
     if (stored) return stored;
     const keys = get()?.apiKeys ?? [];
-    return keys.length > 0 ? keys[0].keyHash : process.env.NEXT_PUBLIC_API_KEY;
+    if (keys.length > 0 && keys[0]?.keyHash) return keys[0].keyHash;
+    try {
+      const fallback = process.env.NEXT_PUBLIC_API_KEY;
+      if (fallback) return fallback;
+    } catch {}
+    return undefined;
   };
 
   const apiFetch = async (path: string, options: RequestInit = {}) => {
