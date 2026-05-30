@@ -52,9 +52,6 @@ export default function DashboardPage() {
           <span className="glass rounded-full px-3 py-1.5 text-ecto-green/70">
             Total: {links.length}
           </span>
-          <span className="glass rounded-full px-3 py-1.5 text-ecto-green/70">
-            Clicks: {links.reduce((acc, l) => acc + l.clickCount, 0)}
-          </span>
         </div>
       </div>
 
