@@ -20,7 +20,6 @@ export default function Navbar() {
 
   const links = user
     ? [
-        { name: 'Home', href: '/home' },
         { name: 'Dashboard', href: '/dashboard' },
       ]
     : [];

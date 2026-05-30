@@ -20,7 +20,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
-    if (user.role !== 'admin') { router.push('/home'); return; }
+    if (user.role !== 'admin') { router.push('/'); return; }
     fetchLinks();
   }, [user, router, fetchLinks]);
 

@@ -1,32 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useSnapStore } from '../context/store';
 import ExpandForm from '../components/ExpandForm';
-import { ArrowRight, ChevronDown, Copy, Check, Download, Globe, BarChart3, Code2, Lock, Calendar, QrCode, ExternalLink, Scissors } from 'lucide-react';
-
-const features = [
-  { icon: Globe, title: 'Edge Redirect Engine', desc: 'Cloudflare KV memory caching processes redirects in milliseconds from edge nodes near your visitors.' },
-  { icon: BarChart3, title: 'Spectral Analytics', desc: 'Track timelines, devices, browsers, countries, and referrers in deep graphical detail.' },
-  { icon: Code2, title: 'REST API', desc: 'Provision API keys and integrate shortening into servers, webhooks, or terminal workflows.' },
-  { icon: Lock, title: 'Password Gates', desc: 'Add gateway credentials to short codes, blocking unauthorized traffic behind a challenge screen.' },
-  { icon: Calendar, title: 'Expiration Schedules', desc: 'Set exact termination times for redirects to keep campaigns and temporary links controlled.' },
-  { icon: QrCode, title: 'High-Res QR Codes', desc: 'Auto-generate scannable matrix codes for every target, printable as high-resolution PNGs.' },
-];
-
-const faqs = [
-  { q: 'How does SnipURL deliver redirects in under 10 milliseconds?', a: 'We utilize Cloudflare KV at the edge. When a shortened URL is requested, our edge Hono Worker retrieves the destination mapping instantly from memory without ever querying our primary SQL database.' },
-  { q: 'Can I use my own custom domain?', a: 'Yes! Pro and Enterprise tiers allow you to link custom domains and define white-label short code schemes for corporate brand distributions.' },
-  { q: 'Are the redirects search-engine friendly?', a: 'SnipURL uses standard HTTP 302/301 redirects, ensuring full SEO link juice and search ranking authority is cleanly forwarded to your target websites.' },
-  { q: 'Can I schedule links to expire or protect them with passwords?', a: 'Yes. Link options include calendar scheduling to expire access at an exact hour, as well as password challenges to restrict redirects to authorized users.' },
-];
-
-const steps = [
-  { step: '01', title: 'Paste URL', desc: 'Provide your long destination URL and configure options like custom aliases or password protection.' },
-  { step: '02', title: 'Generate Code', desc: 'The edge engine compiles a secure short code or applies your chosen custom alias instantly.' },
-  { step: '03', title: 'Distribute', desc: 'Deploy globally across edge nodes and track click analytics in real-time from your dashboard.' },
-];
+import { ArrowRight, ChevronDown, Copy, Check, Scissors, ExternalLink } from 'lucide-react';
 
 function GhostBurst() {
   const [go, setGo] = useState(false);
@@ -88,7 +66,6 @@ export default function LandingPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [copied, setCopied] = useState(false);
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [ghostKey, setGhostKey] = useState(0);
   const [origin, setOrigin] = useState('');
 
@@ -135,7 +112,6 @@ export default function LandingPage() {
 
             <span className="font-mono text-xs tracking-[0.2em] uppercase text-ecto-green block">Link Summoned</span>
 
-            {/* QR Code */}
             <div className="mx-auto bg-white p-3 rounded-2xl w-44 h-44 flex items-center justify-center shadow-lg">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(result.shortUrl)}`}
@@ -144,7 +120,6 @@ export default function LandingPage() {
               />
             </div>
 
-            {/* Short URL */}
             <div className="flex items-center gap-3 glass rounded-xl px-5 py-4 border border-glass-border">
               <span
                 onClick={() => window.open(result.shortUrl, '_blank')}
@@ -163,7 +138,6 @@ export default function LandingPage() {
               </p>
             )}
 
-            {/* Auth message */}
             {user ? (
               <p className="font-mono text-xs tracking-[0.1em] text-ecto-green/70">
                 This link is saved in your dashboard &rarr;
@@ -187,25 +161,8 @@ export default function LandingPage() {
           <span className="text-ecto-green drop-shadow-[0_0_30px_rgba(57,255,144,0.3)]">Void</span>
         </h1>
         <p className="mt-6 mx-auto max-w-xl text-base sm:text-lg font-body text-ghost-white/50 leading-relaxed">
-          Edge-deployed URL shortening with ghost-light redirects, spectral analytics, and password gates.
+          Edge-deployed URL shortening with ghost-light redirects.
         </p>
-
-        {/* FLOATING GHOSTS */}
-        <div className="absolute top-20 left-[8%] w-16 h-16 opacity-10 pointer-events-none animate-float-slow">
-          <svg viewBox="0 0 100 100" fill="#39ff90">
-            <path d="M50 5C27.9 5 10 22.9 10 45c0 15 7 28 18 36.5V95l12-8 10 8V81.5C61 73 68 60 68 45 68 22.9 72.1 5 50 5z" />
-          </svg>
-        </div>
-        <div className="absolute top-32 right-[10%] w-10 h-10 opacity-8 pointer-events-none animate-float-slower">
-          <svg viewBox="0 0 100 100" fill="#a0c4ff">
-            <path d="M50 5C27.9 5 10 22.9 10 45c0 15 7 28 18 36.5V95l12-8 10 8V81.5C61 73 68 60 68 45 68 22.9 72.1 5 50 5z" />
-          </svg>
-        </div>
-        <div className="absolute bottom-0 left-[20%] w-12 h-12 opacity-6 pointer-events-none animate-float-medium">
-          <svg viewBox="0 0 100 100" fill="#7c6fa0">
-            <path d="M50 5C27.9 5 10 22.9 10 45c0 15 7 28 18 36.5V95l12-8 10 8V81.5C61 73 68 60 68 45 68 22.9 72.1 5 50 5z" />
-          </svg>
-        </div>
       </section>
 
       {/* SHORTENER / EXPANDER */}
@@ -286,95 +243,6 @@ export default function LandingPage() {
           ) : (
             <ExpandForm origin={origin} />
           )}
-        </div>
-      </section>
-
-      {/* TRUSTED BY */}
-      <section className="mx-auto max-w-7xl px-4 mt-20 sm:px-6 lg:px-8 border-t border-glass-border pt-12 text-center">
-        <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-ghost-white/20">Trusted by</span>
-        <div className="mt-6 flex flex-wrap justify-center gap-x-10 gap-y-4 opacity-25">
-          {['Stripe', 'Vercel', 'Linear', 'Arc', 'Supabase', 'Clerk'].map(c => (
-            <span key={c} className="font-display text-base tracking-widest text-ghost-white/40">{c}</span>
-          ))}
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section id="features" className="mx-auto max-w-7xl px-4 mt-24 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="font-display text-3xl sm:text-4xl tracking-[0.05em] text-ghost-white">Ethereal by Design</h2>
-          <p className="mt-3 font-body text-base text-ghost-white/40">Built on the edge. Haunted by performance.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {features.map((f, i) => {
-            const Icon = f.icon;
-            return (
-              <div key={i} className="ghost-card p-6 flex flex-col justify-between min-h-[220px]">
-                <Icon className="h-7 w-7 text-ecto-green/60" />
-                <div>
-                  <h3 className="font-display text-sm tracking-[0.1em] text-ghost-white mb-2">{f.title}</h3>
-                  <p className="font-body text-xs text-ghost-white/40 leading-relaxed">{f.desc}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="mx-auto max-w-7xl px-4 mt-24 sm:px-6 lg:px-8 border-t border-glass-border pt-16">
-        <div className="text-center mb-12">
-          <h2 className="font-display text-3xl sm:text-4xl tracking-[0.05em] text-ghost-white">Summon in Three</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {steps.map((s, i) => (
-            <div key={i} className="text-center space-y-4">
-              <span className="font-mono text-lg text-ecto-green/50">{s.step}</span>
-              <h3 className="font-display text-base tracking-[0.1em] text-ghost-white">{s.title}</h3>
-              <p className="font-body text-sm text-ghost-white/40 max-w-xs mx-auto">{s.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="mx-auto max-w-3xl px-4 mt-24 sm:px-6 lg:px-8 border-t border-glass-border pt-16">
-        <h2 className="font-display text-3xl sm:text-4xl tracking-[0.05em] text-ghost-white text-center mb-10">Specters & Answers</h2>
-        <div className="space-y-3">
-          {faqs.map((faq, i) => {
-            const open = activeFaq === i;
-            return (
-              <div key={i} className="glass rounded-xl overflow-hidden">
-                <button
-                  onClick={() => setActiveFaq(open ? null : i)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-left"
-                >
-                  <span className="font-body text-sm text-ghost-white/80">{faq.q}</span>
-                  <ChevronDown className={`h-3.5 w-3.5 text-ghost-white/30 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-                </button>
-                {open && (
-                  <div className="px-5 pb-4 text-xs font-body text-ghost-white/40 leading-relaxed border-t border-glass-border pt-3">
-                    {faq.a}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="mx-auto max-w-5xl px-4 mt-24 mb-16 sm:px-6 lg:px-8">
-        <div className="glass-strong rounded-3xl p-12 sm:p-16 text-center glow-ecto-strong">
-          <h2 className="font-display text-3xl sm:text-4xl tracking-[0.05em] text-ghost-white">Enter the Void</h2>
-          <p className="mt-4 font-body text-base text-ghost-white/50 max-w-lg mx-auto">
-            Thousands of developers already trust SnipURL for ghost-light redirects.
-          </p>
-          <div className="mt-8 flex justify-center gap-4">
-            <Link href="/login?tab=register" className="btn-ghost">
-              Summon Now
-            </Link>
-          </div>
         </div>
       </section>
     </div>

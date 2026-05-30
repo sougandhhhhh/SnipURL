@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSnapStore } from '../context/store';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Compass, BarChart3, LogOut } from 'lucide-react';
+import { Search, BarChart3, LogOut } from 'lucide-react';
 
 export default function CommandPalette() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,7 +28,6 @@ export default function CommandPalette() {
   }, [isOpen]);
 
   const actions = [
-    { name: 'Home', href: '/home', icon: Compass, category: 'Navigate' },
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3, category: 'Navigate' },
     { name: 'Sign Out', action: () => logout(), icon: LogOut, category: 'Account' },
   ];

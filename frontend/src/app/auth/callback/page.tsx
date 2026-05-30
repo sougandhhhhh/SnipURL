@@ -30,7 +30,7 @@ export default function AuthCallback() {
       if (session?.user) {
         setStatus('Signing in...');
         await syncSupabaseUser(session.user);
-        router.push('/home');
+        router.push('/');
       } else {
         router.push('/login');
       }
