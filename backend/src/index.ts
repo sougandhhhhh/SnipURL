@@ -201,23 +201,22 @@ const authenticateApiKey = async (c: any, next: any) => {
 
 // A. URL Shortener Endpoint
 app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
-  const body = await c.req.json();
-  const { longUrl, customAlias, password, expiresAt } = body;
-  const userId = c.get('userId');
-  const db = drizzle(c.env.DB, { schema });
-
-  // Input sanitization
-  if (!longUrl) {
-    return c.json({ error: 'Missing longUrl' }, 400);
-  }
-  if (!validateUrl(longUrl)) {
-    return c.json({ error: 'Invalid URL scheme. Must start with http:// or https://' }, 400);
-  }
-  if (isSpamOrMalicious(longUrl)) {
-    return c.json({ error: 'Unsafe or malicious target URL detected' }, 403);
-  }
-
   try {
+    const body = await c.req.json();
+    const { longUrl, customAlias, password, expiresAt } = body;
+    const userId = c.get('userId');
+    const db = drizzle(c.env.DB, { schema });
+
+    // Input sanitization
+    if (!longUrl) {
+      return c.json({ error: 'Missing longUrl' }, 400);
+    }
+    if (!validateUrl(longUrl)) {
+      return c.json({ error: 'Invalid URL scheme. Must start with http:// or https://' }, 400);
+    }
+    if (isSpamOrMalicious(longUrl)) {
+      return c.json({ error: 'Unsafe or malicious target URL detected' }, 403);
+    }
     let shortCode = customAlias ? customAlias.trim().replace(/[^a-zA-Z0-9-_]/g, '') : '';
     
     // Alias collision checks
@@ -287,7 +286,7 @@ app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
     }, 201);
 
   } catch (err: any) {
-    return c.json({ error: err.message || 'Database error creating shortened link' }, 500);
+    return c.json({ error: err?.message || err?.toString() || 'Database error creating shortened link' }, 500);
   }
 });
 

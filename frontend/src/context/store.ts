@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
+const FALLBACK_API_KEY = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_KEY : undefined;
+
 export interface Link {
   id: string;
   userId: string;
@@ -225,10 +227,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     if (stored) return stored;
     const keys = get()?.apiKeys ?? [];
     if (keys.length > 0 && keys[0]?.keyHash) return keys[0].keyHash;
-    try {
-      const fallback = process.env.NEXT_PUBLIC_API_KEY;
-      if (fallback) return fallback;
-    } catch {}
+    if (FALLBACK_API_KEY) return FALLBACK_API_KEY;
     return undefined;
   };
 
@@ -264,7 +263,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
       id: 'key-1',
       userId: 'user-default',
       name: 'Production Server Core',
-      keyHash: 'su_dev_bootstrap_key',
+      keyHash: FALLBACK_API_KEY || 'su_dev_bootstrap_key',
       createdAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
       lastUsedAt: Date.now() - 2 * 60 * 60 * 1000
     }
