@@ -131,7 +131,7 @@ export default function DashboardPage() {
                       </p>
                     )}
                     <span className="font-mono text-[9px] text-ghost-white/20">
-                      {new Date(link.createdAt).toLocaleDateString()} &middot; {link.clickCount} clicks
+                      {new Date(link.createdAt).toLocaleDateString()}
                     </span>
                   </div>
 
