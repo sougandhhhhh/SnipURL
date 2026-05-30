@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useSnapStore } from '../context/store';
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(false);
@@ -111,6 +112,12 @@ function Particles() {
 }
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const restoreSession = useSnapStore(s => s.restoreSession);
+
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
   return (
     <>
       <PageLoader />

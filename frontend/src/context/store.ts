@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { supabase } from '../lib/supabase';
 
 export interface Link {
   id: string;
@@ -51,9 +52,12 @@ interface SnapStore {
   loading: boolean;
   
   // Auth Operations
-  login: (email: string, name?: string, role?: 'user' | 'admin') => Promise<boolean>;
-  logout: () => void;
-  register: (email: string, name: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<boolean>;
+  signInWithGoogle: () => Promise<void>;
+  syncSupabaseUser: (supabaseUser: any) => Promise<void>;
+  restoreSession: () => Promise<void>;
 
   // Link Operations
   shortenUrl: (longUrl: string, options?: { customAlias?: string; password?: string; expiresAt?: number }) => Promise<Link>;
@@ -278,45 +282,87 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     theme: getInitialTheme(),
     loading: false,
 
-    login: async (email, name = 'SaaS Member', role = 'user') => {
+    login: async (email, password) => {
       set({ loading: true });
-      await new Promise(resolve => setTimeout(resolve, 600)); // Smooth micro-loading UX
-      
-      const loggedUser: User = {
-        id: `user-${Math.random().toString(36).substr(2, 9)}`,
-        email,
-        name,
-        role: email.includes('admin') ? 'admin' : (role as any)
-      };
-
-      set({ user: loggedUser, loading: false });
-      setLocalStorage('snap-user', loggedUser);
-      await get().fetchLinks?.();
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: password || '' });
+      if (error) { set({ loading: false }); throw new Error(error.message); }
+      await get().syncSupabaseUser(data.user);
       return true;
     },
 
-    logout: () => {
-      set({ user: null });
+    logout: async () => {
+      await supabase.auth.signOut();
+      set({ user: null, apiKeys: [], links: [] });
       if (isClient) {
         localStorage.removeItem('snap-user');
+        localStorage.removeItem('snap-apikeys');
       }
     },
 
-    register: async (email, name) => {
+    register: async (email, password, name) => {
       set({ loading: true });
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const newUser: User = {
-        id: `user-${Math.random().toString(36).substr(2, 9)}`,
+      const { data, error } = await supabase.auth.signUp({
         email,
-        name,
-        role: email.includes('admin') ? 'admin' : 'user'
-      };
-
-      set({ user: newUser, loading: false });
-      setLocalStorage('snap-user', newUser);
-      await get().fetchLinks?.();
+        password: password || '',
+        options: { data: { name: name || email.split('@')[0] } },
+      });
+      if (error) { set({ loading: false }); throw new Error(error.message); }
+      if (!data.user) { set({ loading: false }); throw new Error('Signup failed'); }
+      await get().syncSupabaseUser(data.user);
       return true;
+    },
+
+    signInWithGoogle: async () => {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw new Error(error.message);
+    },
+
+    syncSupabaseUser: async (supabaseUser) => {
+      try {
+        const result = await apiFetch('/api/v1/auth/supabase', {
+          method: 'POST',
+          body: JSON.stringify({
+            supabaseId: supabaseUser.id,
+            email: supabaseUser.email,
+            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+          }),
+        });
+
+        const user: User = {
+          id: result.user.id,
+          email: result.user.email,
+          name: result.user.name,
+          role: result.user.role || 'user',
+        };
+
+        const apiKey: ApiKey = result.apiKey;
+        const rawKey = result.rawKey;
+
+        set({ user, apiKeys: [apiKey], loading: false });
+        setLocalStorage('snap-user', user);
+        setLocalStorage('snap-apikeys', [{ ...apiKey, keyHash: rawKey || apiKey.keyHash }]);
+        await get().fetchLinks?.();
+      } catch (err: any) {
+        set({ loading: false });
+        throw new Error(err.message || 'Failed to link account');
+      }
+    },
+
+    restoreSession: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const storedUser = getLocalStorage<User | null>('snap-user', null);
+        const storedKeys = getLocalStorage<ApiKey[]>('snap-apikeys', []);
+        if (storedUser && storedKeys.length > 0) {
+          set({ user: storedUser, apiKeys: storedKeys });
+          await get().fetchLinks?.();
+        } else {
+          await get().syncSupabaseUser(session.user);
+        }
+      }
     },
 
     shortenUrl: async (longUrl, options = {}) => {

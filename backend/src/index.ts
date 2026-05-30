@@ -559,7 +559,73 @@ app.get('/api/v1/analytics/:linkId', authenticateApiKey, async (c) => {
   }
 });
 
-// F. Public Resolve Endpoint (no auth) — used by frontend catch-all redirect
+// F. Supabase Auth Endpoint (no auth) — creates/links user + returns API key
+app.post('/api/v1/auth/supabase', async (c) => {
+  const body = await c.req.json();
+  const { supabaseId, email, name } = body;
+  if (!supabaseId || !email) {
+    return c.json({ error: 'supabaseId and email required' }, 400);
+  }
+
+  const db = drizzle(c.env.DB, { schema });
+  const displayName = name || email.split('@')[0] || 'User';
+  const now = Date.now();
+
+  try {
+    let [existingUser] = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, supabaseId))
+      .limit(1);
+
+    if (!existingUser) {
+      const newUser = { id: supabaseId, email, name: displayName, passwordHash: null, createdAt: now };
+      await db.insert(schema.users).values(newUser);
+      existingUser = newUser as any;
+    } else {
+      await db.update(schema.users)
+        .set({ email, name: displayName })
+        .where(eq(schema.users.id, supabaseId));
+    }
+
+    const [existingKey] = await db
+      .select()
+      .from(schema.apiKeys)
+      .where(eq(schema.apiKeys.userId, supabaseId))
+      .limit(1);
+
+    if (existingKey) {
+      return c.json({
+        success: true,
+        user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, role: existingUser.email?.includes('admin') ? 'admin' : 'user' },
+        apiKey: { id: existingKey.id, userId: existingKey.userId, name: existingKey.name, keyHash: existingKey.keyHash, createdAt: existingKey.createdAt, lastUsedAt: existingKey.lastUsedAt },
+      });
+    }
+
+    const rawKey = `su_live_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+    const newKey = {
+      id: crypto.randomUUID(),
+      userId: supabaseId,
+      keyHash: rawKey,
+      name: 'Auto-generated',
+      createdAt: now,
+      lastUsedAt: null,
+    };
+
+    await db.insert(schema.apiKeys).values(newKey);
+
+    return c.json({
+      success: true,
+      user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, role: existingUser.email?.includes('admin') ? 'admin' : 'user' },
+      apiKey: newKey,
+      rawKey,
+    }, 201);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Error processing Supabase auth' }, 500);
+  }
+});
+
+// G. Public Resolve Endpoint (no auth) — used by frontend catch-all redirect
 app.get('/api/v1/resolve/:code', async (c) => {
   const code = c.req.param('code');
   let linkData: any = null;
