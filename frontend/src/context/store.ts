@@ -389,7 +389,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
 
         const createdLink: Link = {
           id: result.id,
-          userId: get().user?.id || '',
+          userId: result.userId || get().user?.id || '',
           shortCode: result.shortCode,
           longUrl: result.longUrl,
           customAlias: null,

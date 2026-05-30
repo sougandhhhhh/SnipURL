@@ -277,6 +277,7 @@ app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
     return c.json({
       success: true,
       id: newLink.id,
+      userId: newLink.userId,
       shortCode,
       shortUrl,
       longUrl: newLink.longUrl,

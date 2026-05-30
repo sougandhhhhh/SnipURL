@@ -37,7 +37,7 @@ export default function DashboardPage() {
   };
 
   const filteredLinks = links.filter(link =>
-    link.userId === user?.id || link.userId === 'anonymous'
+    user ? link.userId === user.id : (!link.userId || link.userId === 'user-default')
   ).filter(link =>
     search === '' || link.shortCode.toLowerCase().includes(search.toLowerCase()) || link.longUrl.toLowerCase().includes(search.toLowerCase()) || (link.customAlias?.toLowerCase().includes(search.toLowerCase()))
   );
