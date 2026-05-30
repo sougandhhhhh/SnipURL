@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSnapStore, Link as LinkType } from '../../context/store';
-import ExpandForm from '../../components/ExpandForm';
-import { Copy, Check, QrCode, Trash2, Search, Plus, X, Calendar, Lock, ExternalLink, Eye, Download, ChevronDown, Scissors } from 'lucide-react';
+import { Copy, Check, QrCode, Trash2, Search, Plus, X, Calendar, Lock, ExternalLink, Download, ChevronDown } from 'lucide-react';
 export default function DashboardPage() {
   const router = useRouter();
   const { user, links, shortenUrl, updateLink, deleteLink, loading, fetchLinks } = useSnapStore();
@@ -13,7 +12,6 @@ export default function DashboardPage() {
   const [customAlias, setCustomAlias] = useState('');
   const [password, setPassword] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
-  const [mode, setMode] = useState<'shorten' | 'expand'>('shorten');
   const [showOptions, setShowOptions] = useState(false);
   const [search, setSearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -81,71 +79,42 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        {/* LEFT: SHORTENER / EXPANDER */}
+        {/* LEFT: SHORTENER */}
         <div className="lg:col-span-1">
           <div className="glass rounded-2xl p-6 sticky top-24 glow-ecto">
-            <div className="flex border-b border-glass-border mb-5 -mx-1">
-              <button
-                onClick={() => setMode('shorten')}
-                className={`flex-1 pb-3 px-2 font-mono text-[9px] tracking-[0.15em] uppercase transition-colors relative ${
-                  mode === 'shorten' ? 'text-ecto-green' : 'text-ghost-white/30 hover:text-ghost-white/60'
-                }`}
-              >
-                <Scissors className="h-3 w-3 inline mr-1 -mt-0.5" />
-                Shorten
-                {mode === 'shorten' && <span className="absolute bottom-0 left-2 right-2 h-[1px] bg-ecto-green shadow-[0_0_6px_rgba(57,255,144,0.5)]" />}
+            <h2 className="font-display text-sm tracking-[0.1em] text-ecto-green mb-4 flex items-center gap-2">
+              <Plus className="h-4 w-4" /> Summon New URL
+            </h2>
+            <form onSubmit={handleShorten} className="space-y-4">
+              <input
+                type="url" required value={longUrl} onChange={e => setLongUrl(e.target.value)}
+                placeholder="https://example.com/long/path"
+                className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+              />
+              <button type="button" onClick={() => setShowOptions(!showOptions)}
+                className="font-mono text-[9px] tracking-[0.15em] uppercase text-ghost-white/30 hover:text-ecto-green/60 transition-colors flex items-center gap-1.5">
+                <ChevronDown className={`h-3 w-3 transition-transform ${showOptions ? 'rotate-180' : ''}`} />
+                {showOptions ? 'Hide options' : 'Alias & protection'}
               </button>
-              <button
-                onClick={() => setMode('expand')}
-                className={`flex-1 pb-3 px-2 font-mono text-[9px] tracking-[0.15em] uppercase transition-colors relative ${
-                  mode === 'expand' ? 'text-ecto-green' : 'text-ghost-white/30 hover:text-ghost-white/60'
-                }`}
-              >
-                <ExternalLink className="h-3 w-3 inline mr-1 -mt-0.5" />
-                Expand
-                {mode === 'expand' && <span className="absolute bottom-0 left-2 right-2 h-[1px] bg-ecto-green shadow-[0_0_6px_rgba(57,255,144,0.5)]" />}
+              {showOptions && (
+                <div className="space-y-3">
+                  <input type="text" value={customAlias} onChange={e => setCustomAlias(e.target.value)}
+                    placeholder="Custom alias (e.g. my-link)"
+                    className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                    placeholder="Password protect"
+                    className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
+                  <div className="flex items-center gap-2 text-ghost-white/30 font-mono text-[9px] uppercase tracking-[0.1em]">
+                    <Calendar className="h-3 w-3 text-ecto-green/40" />
+                    <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)}
+                      className="flex-1 h-9 rounded-full bg-white/[0.04] border border-glass-border px-3 text-[10px] text-ghost-white focus:border-ecto-green/40 focus:outline-none transition-colors [color-scheme:dark]" />
+                  </div>
+                </div>
+              )}
+              <button type="submit" disabled={loading} className="btn-ghost w-full justify-center text-[10px]">
+                {loading ? 'Summoning...' : 'Shorten'} <Plus className="h-3 w-3" />
               </button>
-            </div>
-
-            {mode === 'shorten' ? (
-              <>
-                <h2 className="font-display text-sm tracking-[0.1em] text-ecto-green mb-4 flex items-center gap-2">
-                  <Plus className="h-4 w-4" /> Summon New URL
-                </h2>
-                <form onSubmit={handleShorten} className="space-y-4">
-                  <input
-                    type="url" required value={longUrl} onChange={e => setLongUrl(e.target.value)}
-                    placeholder="https://example.com/long/path"
-                    className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
-                  />
-                  <button type="button" onClick={() => setShowOptions(!showOptions)}
-                    className="font-mono text-[9px] tracking-[0.15em] uppercase text-ghost-white/30 hover:text-ecto-green/60 transition-colors flex items-center gap-1.5">
-                    <ChevronDown className={`h-3 w-3 transition-transform ${showOptions ? 'rotate-180' : ''}`} />
-                    {showOptions ? 'Hide options' : 'Alias & protection'}
-                  </button>
-                  {showOptions && (
-                    <div className="space-y-3">
-                      <input type="text" value={customAlias} onChange={e => setCustomAlias(e.target.value)}
-                        placeholder="Custom alias (e.g. my-link)"
-                        className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
-                      <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                        placeholder="Password protect"
-                        className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
-                      <div className="flex items-center gap-2 text-ghost-white/30 font-mono text-[9px] uppercase tracking-[0.1em]">
-                        <Calendar className="h-3 w-3 text-ecto-green/40" />
-                        <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)}
-                          className="flex-1 h-9 rounded-full bg-white/[0.04] border border-glass-border px-3 text-[10px] text-ghost-white focus:border-ecto-green/40 focus:outline-none transition-colors [color-scheme:dark]" />
-                      </div>
-                    </div>
-                  )}
-                  <button type="submit" disabled={loading} className="btn-ghost w-full justify-center text-[10px]">
-                    {loading ? 'Summoning...' : 'Shorten'} <Plus className="h-3 w-3" />
-                  </button>
-                </form>
-              </>
-            ) : (
-              <ExpandForm origin={origin} />
-            )}
+            </form>
           </div>
         </div>
 
@@ -211,10 +180,10 @@ export default function DashboardPage() {
                           className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors" title="QR Code">
                           <QrCode className="h-3.5 w-3.5" />
                         </button>
-                        <button onClick={() => router.push(`/analytics?id=${link.id}`)}
-                          className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors" title="Analytics">
-                          <Eye className="h-3.5 w-3.5" />
-                        </button>
+                        <a href={`${origin}/${link.shortCode}`} target="_blank" rel="noopener noreferrer"
+                          className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors inline-flex" title="Open link">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
                         <button onClick={() => { setEditingLink(link); setEditUrl(link.longUrl); }}
                           className="font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 hover:text-ecto-green/60 border border-glass-border rounded-lg px-2.5 py-1.5 transition-colors">Edit</button>
                         <button onClick={() => handleToggleActive(link)}

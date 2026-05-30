@@ -20,11 +20,8 @@ export default function Navbar() {
 
   const links = user
     ? [
+        { name: 'Home', href: '/home' },
         { name: 'Dashboard', href: '/dashboard' },
-        { name: 'Analytics', href: '/analytics' },
-        { name: 'Expand', href: '/expand' },
-        { name: 'API Keys', href: '/settings' },
-        ...(user.role === 'admin' ? [{ name: 'Admin', href: '/admin' }] : []),
       ]
     : [];
 

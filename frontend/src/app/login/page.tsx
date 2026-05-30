@@ -21,7 +21,7 @@ function AuthContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (user) router.push('/dashboard');
+    if (user) router.push('/home');
   }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,7 +31,7 @@ function AuthContent() {
     if (choice === 'register' && !name) { setError('Name required.'); return; }
     try {
       const success = choice === 'login' ? await login(email, password) : await register(email, password, name);
-      if (success) router.push('/dashboard');
+      if (success) router.push('/home');
     } catch (err: any) {
       setError(err.message || 'Authentication error.');
     }
