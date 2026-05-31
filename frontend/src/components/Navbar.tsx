@@ -29,6 +29,7 @@ export default function Navbar() {
     ? [
         { name: 'Home', href: '/' },
         { name: 'Dashboard', href: '/dashboard' },
+        { name: 'Settings', href: '/settings' },
       ]
     : [];
 
@@ -115,7 +116,7 @@ export default function Navbar() {
           <div className="fixed inset-0 bg-bg-void/70 backdrop-blur-sm" onClick={() => setShowLogoutModal(false)} />
           <div className="glass-strong relative w-full max-w-sm p-8 rounded-3xl text-center space-y-6 animate-fade-in">
             <h3 className="font-display text-base tracking-[0.1em] text-ghost-white">Sign out?</h3>
-            <p className="font-body text-sm text-ghost-white/50">You can always sign back in.</p>
+            <p className="font-body text-sm text-ghost-white/50">Are you sure you want to sign out?</p>
             <div className="flex gap-3 justify-center">
               <button onClick={() => setShowLogoutModal(false)}
                 className="font-mono text-[10px] tracking-[0.15em] uppercase text-ghost-white/50 hover:text-ghost-white border border-glass-border rounded-full px-6 py-2 transition-colors">
