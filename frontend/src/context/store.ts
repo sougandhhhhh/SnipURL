@@ -375,11 +375,9 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     restoreSession: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const storedUser = getLocalStorage<User | null>('snap-user', null);
         const storedKeys = getLocalStorage<ApiKey[]>('snap-apikeys', []);
-        if (storedUser && storedKeys.length > 0) {
-          set({ user: storedUser, apiKeys: storedKeys });
-          await get().fetchLinks?.();
+        if (storedKeys.length > 0) {
+          await get().syncSupabaseUser(session.user);
         } else {
           await get().syncSupabaseUser(session.user);
         }

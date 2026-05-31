@@ -421,7 +421,7 @@ app.get('/api/v1/links', authenticateApiKey, async (c) => {
       })
       .from(schema.links)
       .leftJoin(schema.analytics, eq(schema.analytics.linkId, schema.links.id))
-      .where(or(eq(schema.links.userId, userId), eq(schema.links.userId, 'user-default')))
+      .where(eq(schema.links.userId, userId))
       .groupBy(
         schema.links.id,
         schema.links.shortCode,

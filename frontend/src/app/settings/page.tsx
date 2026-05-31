@@ -57,7 +57,9 @@ export default function SettingsPage() {
         body: JSON.stringify({ name: trimmed }),
       });
       if (result.user) {
-        useSnapStore.setState({ user: { ...user, name: result.user.name } });
+        const updatedUser = { ...user, name: result.user.name };
+        useSnapStore.setState({ user: updatedUser });
+        localStorage.setItem('snap-user', JSON.stringify(updatedUser));
       }
       setEditingName(false);
     } catch (err: any) {
@@ -87,7 +89,9 @@ export default function SettingsPage() {
         body: JSON.stringify({ dateOfBirth: dobInput || null }),
       });
       if (result.user) {
-        useSnapStore.setState({ user: { ...user, dateOfBirth: result.user.dateOfBirth } });
+        const updatedUser = { ...user, dateOfBirth: result.user.dateOfBirth };
+        useSnapStore.setState({ user: updatedUser });
+        localStorage.setItem('snap-user', JSON.stringify(updatedUser));
       }
       setDobMessage('Date of birth saved');
       setTimeout(() => setDobMessage(''), 2000);
