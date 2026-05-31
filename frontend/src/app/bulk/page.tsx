@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSnapStore } from '../../context/store';
 import { Upload, Check, AlertTriangle, Download, ArrowLeft } from 'lucide-react';
@@ -12,6 +12,7 @@ export default function BulkPage() {
   const [results, setResults] = useState<{ url: string; shortUrl?: string; error?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
 
   if (user === null) {
     return (
@@ -36,13 +37,9 @@ export default function BulkPage() {
     return urls;
   };
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const processUrls = async (urls: string[]) => {
     setError('');
     setResults([]);
-    const text = await file.text();
-    const urls = parseCSV(text);
     if (urls.length === 0) { setError('No valid URLs found in file.'); return; }
     if (urls.length > 100) { setError('Maximum 100 URLs per batch.'); return; }
     setLoading(true);
@@ -58,6 +55,25 @@ export default function BulkPage() {
     setResults(out);
     setLoading(false);
   };
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    await processUrls(parseCSV(text));
+  };
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !file.name.endsWith('.csv')) { setError('Please drop a .csv file.'); return; }
+    const text = await file.text();
+    await processUrls(parseCSV(text));
+  }, []);
+
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = () => setIsDragging(false);
 
   const downloadCSV = () => {
     const header = 'Original URL,Short URL,Status\n';
@@ -86,13 +102,19 @@ export default function BulkPage() {
         </div>
 
         <div className="glass-strong rounded-3xl p-8 space-y-6">
-          <div className="border-2 border-dashed border-glass-border rounded-2xl p-10 text-center hover:border-ecto-green/40 transition-colors">
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={`border-2 border-dashed rounded-2xl p-10 text-center transition-colors cursor-pointer ${isDragging ? 'border-ecto-green bg-ecto-green/5' : 'border-glass-border hover:border-ecto-green/40'}`}
+            onClick={() => fileRef.current?.click()}
+          >
             <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
-            <button onClick={() => fileRef.current?.click()} disabled={loading} className="space-y-3">
-              <Upload className="h-8 w-8 mx-auto text-ecto-green/60" />
-              <p className="font-body text-sm text-ghost-white/60">Click to upload a CSV file</p>
-              <p className="font-mono text-[10px] text-ghost-white/30">One URL per row or column. Max 100 URLs.</p>
-            </button>
+            <Upload className={`h-8 w-8 mx-auto ${isDragging ? 'text-ecto-green' : 'text-ecto-green/60'}`} />
+            <p className="font-body text-sm text-ghost-white/60 mt-3">
+              {isDragging ? 'Drop your CSV here' : 'Drag & drop a CSV file, or click to browse'}
+            </p>
+            <p className="font-mono text-[10px] text-ghost-white/30 mt-1">One URL per row or column. Max 100 URLs.</p>
           </div>
 
           {error && (
