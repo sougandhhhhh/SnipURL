@@ -28,7 +28,7 @@ function LinkRow({ link, origin, copiedId, onCopy, onEdit, onQr, onDelete }: {
               {link.isActive && !isExpired ? 'Active' : 'Inactive'}
             </span>
           </div>
-          <p className="font-body text-xs text-ghost-white/40 truncate max-w-md">
+          <p className="font-body text-xs text-ghost-white/40 truncate">
             {link.longUrl}
           </p>
           <span className="font-mono text-[9px] text-ghost-white/20">
@@ -182,7 +182,7 @@ export default function DashboardPage() {
   if (!user) return null;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-16 sm:px-6 lg:px-8 space-y-8">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:py-16 sm:px-8 lg:px-12 space-y-8">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-glass-border pb-6 gap-4">
         <div>
@@ -197,7 +197,7 @@ export default function DashboardPage() {
       </div>
 
       {/* SEARCH */}
-      <div className="glass rounded-xl flex items-center px-4 max-w-md">
+      <div className="glass rounded-xl flex items-center px-4 max-w-2xl">
         <Search className="h-4 w-4 text-ghost-white/30 shrink-0" />
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search short codes or destinations..."

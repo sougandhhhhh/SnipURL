@@ -91,7 +91,7 @@ export default function BulkPage() {
 
   return (
     <div className="min-h-screen pt-28 pb-20 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-3xl space-y-8">
+      <div className="mx-auto max-w-5xl space-y-8">
         <button onClick={() => router.push('/')} className="font-mono text-[10px] tracking-[0.15em] uppercase text-ghost-white/30 hover:text-ecto-green/60 transition-colors inline-flex items-center gap-1 bg-transparent border-none cursor-pointer">
           <ArrowLeft className="h-3 w-3" /> Back
         </button>
