@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSnapStore } from '../context/store';
-import { Menu, X, Terminal } from 'lucide-react';
+import { Menu, X, Code2 } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -76,17 +76,16 @@ export default function Navbar() {
             <div className="hidden md:flex items-center space-x-4">
               <div className="relative">
                 <button onClick={() => setShowDevMenu(!showDevMenu)} className="text-ghost-white/40 hover:text-ghost-white transition-colors">
-                  <Terminal className="h-4 w-4" />
+                  <Code2 className="h-4 w-4" />
                 </button>
                 {showDevMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowDevMenu(false)} />
-                    <div className="absolute right-0 top-full mt-2 z-50 glass-strong border border-glass-border rounded-2xl p-2 min-w-[160px] space-y-0.5">
+                    <div className="absolute right-0 top-full mt-2 z-50 glass-strong border border-glass-border rounded-2xl p-3 flex gap-3">
                       {devLinks.map(link => (
                         <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-body text-ghost-white/50 hover:text-ghost-white hover:bg-white/[0.04] transition-colors">
+                          className="text-ghost-white/40 hover:text-ghost-white transition-colors" title={link.label}>
                           {link.icon}
-                          {link.label}
                         </a>
                       ))}
                     </div>

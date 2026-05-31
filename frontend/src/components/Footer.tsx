@@ -17,7 +17,7 @@ export default function Footer() {
             </span>
             </Link>
             <p className="text-xs font-body text-ghost-white/40 leading-relaxed">
-              Edge-deployed URL shortening. Spectral analytics. Ghost-light redirects.
+              Fast, secure URL shortening and expansion in one place.
             </p>
             <div className="flex space-x-4 pt-2">
               {['X', 'Git', 'Chat'].map(label => (
