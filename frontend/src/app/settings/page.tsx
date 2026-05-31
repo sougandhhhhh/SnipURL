@@ -10,7 +10,6 @@ export default function SettingsPage() {
   const router = useRouter();
   const { user, apiFetch } = useSnapStore();
   const [mounted, setMounted] = useState(false);
-  const [hasPassword, setHasPassword] = useState(true);
 
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
@@ -36,10 +35,6 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!mounted) return;
     if (!user) { router.push('/login'); return; }
-    supabase.auth.getUser().then(({ data }) => {
-      const identities = data?.user?.identities ?? [];
-      setHasPassword(identities.some(i => i.provider === 'email'));
-    });
     if (user.dateOfBirth) setDobInput(user.dateOfBirth);
   }, [mounted, user, router]);
 
@@ -119,7 +114,7 @@ export default function SettingsPage() {
 
     setPassLoading(true);
 
-    if (hasPassword) {
+    if (user.passwordSet) {
       if (!currentPassword) { setPassError('Current password required.'); setPassLoading(false); return; }
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user.email,
@@ -132,10 +127,23 @@ export default function SettingsPage() {
       password: newPassword,
     });
 
-    setPassLoading(false);
-    if (updateError) { setPassError(updateError.message); return; }
+    if (updateError) { setPassError(updateError.message); setPassLoading(false); return; }
 
-    setPassSuccess(hasPassword ? 'Password updated.' : 'Password set successfully.');
+    // Mark password as set in our backend
+    try {
+      const result = await apiFetch('/api/v1/user/profile', {
+        method: 'PUT',
+        body: JSON.stringify({ passwordSet: true }),
+      });
+      if (result.user) {
+        const updatedUser = { ...user, passwordSet: true };
+        useSnapStore.setState({ user: updatedUser });
+        localStorage.setItem('snap-user', JSON.stringify(updatedUser));
+      }
+    } catch {}
+
+    setPassLoading(false);
+    setPassSuccess(user.passwordSet ? 'Password updated.' : 'Password set successfully.');
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
@@ -227,11 +235,11 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3">
             <Lock className="h-4 w-4 text-ecto-green/60" />
             <h3 className="font-display text-base tracking-[0.05em] text-ghost-white">
-              {hasPassword ? 'Change Password' : 'Set Password'}
+              {user.passwordSet ? 'Change Password' : 'Set Password'}
             </h3>
           </div>
 
-          {!hasPassword && (
+          {!user.passwordSet && (
             <p className="font-body text-xs text-ghost-white/40">You signed up with Google. Set a password to enable email sign-in.</p>
           )}
 
@@ -243,7 +251,7 @@ export default function SettingsPage() {
               <div className="rounded-xl bg-ecto-green/5 border border-ecto-green/20 p-3 font-mono text-[10px] text-ecto-green/80 text-center">{passSuccess}</div>
             )}
 
-            {hasPassword && (
+            {user.passwordSet && (
               <div className="relative">
                 <input type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
                   placeholder="Current password"
@@ -273,7 +281,7 @@ export default function SettingsPage() {
             </div>
 
             <button type="submit" disabled={passLoading} className="btn-ghost w-full justify-center text-xs py-3">
-              {passLoading ? 'Updating...' : hasPassword ? 'Update Password' : 'Set Password'}
+              {passLoading ? 'Updating...' : user.passwordSet ? 'Update Password' : 'Set Password'}
             </button>
           </form>
         </div>

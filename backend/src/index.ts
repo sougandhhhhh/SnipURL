@@ -745,7 +745,7 @@ app.post('/api/v1/auth/supabase', async (c) => {
     if (existingKey) {
       return c.json({
         success: true,
-        user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, dateOfBirth: existingUser.dateOfBirth, role: existingUser.email?.includes('admin') ? 'admin' : 'user' },
+        user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, dateOfBirth: existingUser.dateOfBirth, passwordSet: existingUser.passwordHash !== null, role: existingUser.email?.includes('admin') ? 'admin' : 'user' },
         apiKey: { id: existingKey.id, userId: existingKey.userId, name: existingKey.name, keyHash: existingKey.keyHash, createdAt: existingKey.createdAt, lastUsedAt: existingKey.lastUsedAt },
       });
     }
@@ -783,6 +783,7 @@ app.put('/api/v1/user/profile', authenticateApiKey, async (c) => {
     const updates: Record<string, any> = {};
     if (body.name !== undefined) updates.name = body.name;
     if (body.dateOfBirth !== undefined) updates.dateOfBirth = body.dateOfBirth || null;
+    if (body.passwordSet === true) updates.passwordHash = 'set';
 
     if (Object.keys(updates).length === 0) {
       return c.json({ error: 'No fields to update' }, 400);
@@ -794,7 +795,7 @@ app.put('/api/v1/user/profile', authenticateApiKey, async (c) => {
 
     return c.json({
       success: true,
-      user: { id: updated.id, email: updated.email, name: updated.name, dateOfBirth: updated.dateOfBirth, role: updated.email?.includes('admin') ? 'admin' : 'user' },
+      user: { id: updated.id, email: updated.email, name: updated.name, dateOfBirth: updated.dateOfBirth, passwordSet: updated.passwordHash !== null, role: updated.email?.includes('admin') ? 'admin' : 'user' },
     });
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to update profile' }, 500);

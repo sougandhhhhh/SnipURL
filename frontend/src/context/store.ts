@@ -44,6 +44,7 @@ export interface User {
   email: string;
   name: string;
   dateOfBirth?: string | null;
+  passwordSet?: boolean;
   role: 'user' | 'admin';
 }
 
@@ -356,6 +357,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
           email: result.user.email,
           name: result.user.name,
           dateOfBirth: result.user.dateOfBirth || null,
+          passwordSet: result.user.passwordSet || false,
           role: result.user.role || 'user',
         };
 
