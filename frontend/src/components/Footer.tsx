@@ -1,15 +1,13 @@
-'use client';
-
 import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-glass-border bg-bg-void pt-16 pb-8 overflow-hidden">
+    <footer className="relative border-t border-glass-border bg-bg-void pt-10 pb-6 overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[1px] bg-gradient-to-r from-transparent via-ecto-green/20 to-transparent pointer-events-none" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
-          <div className="md:col-span-1 space-y-4">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+          <div className="md:col-span-1 space-y-3">
             <Link href="/" className="flex items-center space-x-3">
               <img src="/logo.svg" alt="SnipURL" width="28" height="28" />
               <span className="font-brand text-base tracking-widest">
@@ -19,16 +17,9 @@ export default function Footer() {
             <p className="text-xs font-body text-ghost-white/40 leading-relaxed">
               Fast, secure URL shortening and expansion in one place.
             </p>
-            <div className="flex space-x-4 pt-2">
-              {['X', 'Git', 'Chat'].map(label => (
-                <a key={label} href="#" className="font-mono text-[10px] tracking-[0.1em] uppercase text-ghost-white/30 hover:text-ecto-green transition-colors">
-                  {label}
-                </a>
-              ))}
-            </div>
           </div>
 
-          <div className="md:col-start-4 space-y-4">
+          <div className="md:col-start-4 space-y-3">
             <h4 className="font-mono text-[10px] tracking-[0.15em] uppercase text-ecto-green/60">
               Developer
             </h4>
@@ -52,7 +43,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-glass-border pt-6 flex flex-col md:flex-row justify-between items-center text-[10px] font-mono tracking-[0.1em] uppercase text-ghost-white/20 gap-4">
+        <div className="mt-8 border-t border-glass-border pt-5 flex flex-col md:flex-row justify-between items-center text-[10px] font-mono tracking-[0.1em] uppercase text-ghost-white/20 gap-4">
           <span>&copy; {new Date().getFullYear()} SnipURL. Spectral rights reserved.</span>
           <div className="flex space-x-6">
             <Link href="/privacy" className="hover:text-ghost-white/50 transition-colors">Privacy</Link>
