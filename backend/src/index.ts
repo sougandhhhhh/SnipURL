@@ -682,4 +682,36 @@ app.get('/api/v1/resolve/:code', async (c) => {
   return c.json({ longUrl: linkData.longUrl });
 });
 
+app.post('/api/v1/resolve/:code', async (c) => {
+  const code = c.req.param('code');
+  const { password } = await c.req.json();
+  let linkData: any = null;
+
+  if (c.env.KV) {
+    try { const cached = await c.env.KV.get(`code:${code}`); if (cached) linkData = JSON.parse(cached); } catch {}
+  }
+
+  if (!linkData) {
+    const db = drizzle(c.env.DB, { schema });
+    try {
+      let rows = await db.select().from(schema.links).where(eq(schema.links.shortCode, code)).limit(1);
+      if (rows.length === 0) rows = await db.select().from(schema.links).where(eq(schema.links.customAlias, code)).limit(1);
+      if (rows.length > 0) {
+        const row = rows[0];
+        linkData = { longUrl: row.longUrl, password: row.password, expiresAt: row.expiresAt, isActive: row.isActive };
+      }
+    } catch {}
+  }
+
+  if (!linkData) return c.json({ error: 'Not found' }, 404);
+  if (!linkData.isActive || (linkData.expiresAt && Date.now() > linkData.expiresAt)) return c.json({ error: 'Expired' }, 410);
+
+  if (linkData.password) {
+    if (!password) return c.json({ error: 'Password required' }, 401);
+    if (password !== linkData.password) return c.json({ error: 'Incorrect password' }, 403);
+  }
+
+  return c.json({ longUrl: linkData.longUrl });
+});
+
 export default app;
