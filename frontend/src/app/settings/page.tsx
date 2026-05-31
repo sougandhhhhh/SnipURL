@@ -4,13 +4,19 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSnapStore } from '../../context/store';
 import { supabase } from '../../lib/supabase';
-import { User, Mail, Calendar, Copy, Check, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Calendar, Copy, Check, Lock, Eye, EyeOff, Pencil, X as XIcon } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user } = useSnapStore();
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [hasPassword, setHasPassword] = useState(true);
+
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -25,7 +31,12 @@ export default function SettingsPage() {
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    if (mounted && !user) router.push('/login');
+    if (!mounted) return;
+    if (!user) { router.push('/login'); return; }
+    supabase.auth.getUser().then(({ data }) => {
+      const identities = data?.user?.identities ?? [];
+      setHasPassword(identities.some(i => i.provider === 'email'));
+    });
   }, [mounted, user, router]);
 
   if (!user) return null;
@@ -36,12 +47,33 @@ export default function SettingsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSaveName = async () => {
+    const trimmed = nameInput.trim();
+    if (!trimmed) { setNameError('Name cannot be empty.'); return; }
+    setNameError('');
+    setNameSaving(true);
+    const { error } = await supabase.auth.updateUser({ data: { name: trimmed } });
+    if (error) { setNameError(error.message); setNameSaving(false); return; }
+    window.location.reload();
+  };
+
+  const startEditingName = () => {
+    setNameInput(user.name);
+    setNameError('');
+    setEditingName(true);
+  };
+
+  const cancelEditingName = () => {
+    setEditingName(false);
+    setNameError('');
+  };
+
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPassError('');
     setPassSuccess('');
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if (!newPassword || !confirmPassword) {
       setPassError('All fields required.'); return;
     }
     if (newPassword.length < 6) {
@@ -53,15 +85,13 @@ export default function SettingsPage() {
 
     setPassLoading(true);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user.email,
-      password: currentPassword,
-    });
-
-    if (signInError) {
-      setPassError('Current password is incorrect.');
-      setPassLoading(false);
-      return;
+    if (hasPassword) {
+      if (!currentPassword) { setPassError('Current password required.'); setPassLoading(false); return; }
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (signInError) { setPassError('Current password is incorrect.'); setPassLoading(false); return; }
     }
 
     const { error: updateError } = await supabase.auth.updateUser({
@@ -69,13 +99,9 @@ export default function SettingsPage() {
     });
 
     setPassLoading(false);
+    if (updateError) { setPassError(updateError.message); return; }
 
-    if (updateError) {
-      setPassError(updateError.message);
-      return;
-    }
-
-    setPassSuccess('Password updated successfully.');
+    setPassSuccess(hasPassword ? 'Password updated.' : 'Password set successfully.');
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
@@ -102,12 +128,32 @@ export default function SettingsPage() {
 
           <div className="space-y-5">
             <div className="flex items-center justify-between py-3 border-b border-glass-border">
-              <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-ecto-green/60" />
-                <div>
-                  <p className="font-body text-sm text-ghost-white/60">Name</p>
-                  <p className="font-body text-sm text-ghost-white">{user.name}</p>
-                </div>
+              <div className="flex items-center gap-3 flex-1">
+                <User className="h-4 w-4 text-ecto-green/60 shrink-0" />
+                {editingName ? (
+                  <div className="flex-1 flex items-center gap-2">
+                    <input type="text" value={nameInput} onChange={e => setNameInput(e.target.value)}
+                      className="flex-1 h-9 rounded-full bg-white/[0.04] border border-glass-border px-4 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" autoFocus />
+                    <button onClick={handleSaveName} disabled={nameSaving}
+                      className="font-mono text-[10px] tracking-[0.1em] uppercase text-ecto-green hover:text-ecto-green/80 transition-colors">
+                      {nameSaving ? '...' : 'Save'}
+                    </button>
+                    <button onClick={cancelEditingName} className="text-ghost-white/40 hover:text-ghost-white transition-colors">
+                      <XIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <p className="font-body text-sm text-ghost-white/60">Name</p>
+                      <p className="font-body text-sm text-ghost-white">{user.name}</p>
+                    </div>
+                    {nameError && <p className="text-[10px] text-red-400">{nameError}</p>}
+                    <button onClick={startEditingName} className="ml-auto text-ghost-white/30 hover:text-ecto-green transition-colors">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -139,8 +185,14 @@ export default function SettingsPage() {
         <div className="glass-strong rounded-3xl p-8 space-y-6">
           <div className="flex items-center gap-3">
             <Lock className="h-4 w-4 text-ecto-green/60" />
-            <h3 className="font-display text-base tracking-[0.05em] text-ghost-white">Change Password</h3>
+            <h3 className="font-display text-base tracking-[0.05em] text-ghost-white">
+              {hasPassword ? 'Change Password' : 'Set Password'}
+            </h3>
           </div>
+
+          {!hasPassword && (
+            <p className="font-body text-xs text-ghost-white/40">You signed up with Google. Set a password to enable email sign-in.</p>
+          )}
 
           <form onSubmit={handlePasswordChange} className="space-y-4">
             {passError && (
@@ -150,14 +202,16 @@ export default function SettingsPage() {
               <div className="rounded-xl bg-ecto-green/5 border border-ecto-green/20 p-3 font-mono text-[10px] text-ecto-green/80 text-center">{passSuccess}</div>
             )}
 
-            <div className="relative">
-              <input type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
-                placeholder="Current password"
-                className="w-full h-11 rounded-full bg-white/[0.04] border border-glass-border px-5 pr-10 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
-              <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-4 top-1/2 -translate-y-1/2 text-ghost-white/30 hover:text-ghost-white/60 transition-colors">
-                {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
+            {hasPassword && (
+              <div className="relative">
+                <input type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
+                  placeholder="Current password"
+                  className="w-full h-11 rounded-full bg-white/[0.04] border border-glass-border px-5 pr-10 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
+                <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-4 top-1/2 -translate-y-1/2 text-ghost-white/30 hover:text-ghost-white/60 transition-colors">
+                  {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            )}
 
             <div className="relative">
               <input type={showNew ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)}
@@ -178,7 +232,7 @@ export default function SettingsPage() {
             </div>
 
             <button type="submit" disabled={passLoading} className="btn-ghost w-full justify-center text-xs py-3">
-              {passLoading ? 'Updating...' : 'Update Password'}
+              {passLoading ? 'Updating...' : hasPassword ? 'Update Password' : 'Set Password'}
             </button>
           </form>
         </div>
