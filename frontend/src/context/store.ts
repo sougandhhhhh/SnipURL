@@ -11,6 +11,7 @@ export interface Link {
   customAlias: string | null;
   isActive: boolean;
   isOneTime: boolean;
+  batchId?: string | null;
   password?: string | null;
   expiresAt: number | null;
   createdAt: number;

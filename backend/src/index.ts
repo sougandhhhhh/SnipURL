@@ -324,6 +324,7 @@ app.post('/api/v1/shorten/bulk', authenticateApiKey, async (c) => {
 
     const results: { url: string; shortCode: string; shortUrl: string; error?: string }[] = [];
     const displayDomain = (c.env.FRONTEND_URL || '').replace(/\/+$/, '').trim() || c.req.url.replace('/api/v1/shorten/bulk', '');
+    const batchId = crypto.randomUUID();
 
     for (const item of urls) {
       const targetUrl = typeof item === 'string' ? item : item.url;
@@ -356,6 +357,7 @@ app.post('/api/v1/shorten/bulk', authenticateApiKey, async (c) => {
         customAlias: null,
         isActive: true,
         isOneTime: false,
+        batchId,
         password: null,
         expiresAt: null,
         createdAt: Date.now(),
@@ -368,7 +370,7 @@ app.post('/api/v1/shorten/bulk', authenticateApiKey, async (c) => {
         results.push({ url: targetUrl, shortCode, shortUrl });
         try {
           await c.env.KV.put(`code:${shortCode}`, JSON.stringify({
-            id: newLink.id, longUrl: newLink.longUrl, isActive: newLink.isActive, isOneTime: false, password: null, expiresAt: null,
+            id: newLink.id, longUrl: newLink.longUrl, isActive: newLink.isActive, isOneTime: false, password: null, expiresAt: null, batchId,
           }), { expirationTtl: 600 });
         } catch {}
       } catch (err: any) {
@@ -396,6 +398,7 @@ app.get('/api/v1/links', authenticateApiKey, async (c) => {
         longUrl: schema.links.longUrl,
         customAlias: schema.links.customAlias,
         isActive: schema.links.isActive,
+        batchId: schema.links.batchId,
         createdAt: schema.links.createdAt,
         expiresAt: schema.links.expiresAt,
         passwordEnabled: sql`CASE WHEN ${schema.links.password} IS NOT NULL THEN 1 ELSE 0 END`,
@@ -412,7 +415,8 @@ app.get('/api/v1/links', authenticateApiKey, async (c) => {
         schema.links.isActive,
         schema.links.createdAt,
         schema.links.expiresAt,
-        schema.links.password
+        schema.links.password,
+        schema.links.batchId
       )
       .orderBy(desc(schema.links.createdAt));
 

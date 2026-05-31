@@ -16,6 +16,7 @@ export const links = sqliteTable('links', {
   customAlias: text('custom_alias').unique(),
   isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
   isOneTime: integer('is_one_time', { mode: 'boolean' }).default(false).notNull(),
+  batchId: text('batch_id'),
   password: text('password'),
   expiresAt: integer('expires_at'),
   createdAt: integer('created_at').notNull(),

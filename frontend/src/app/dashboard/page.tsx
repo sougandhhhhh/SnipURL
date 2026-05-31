@@ -1,9 +1,65 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSnapStore, Link as LinkType } from '../../context/store';
-import { Copy, Check, QrCode, Trash2, Search, X, Lock, ExternalLink, Download, ChevronDown } from 'lucide-react';
+import { Copy, Check, QrCode, Trash2, Search, X, Lock, ExternalLink, Download, ChevronDown, ChevronRight, Layers } from 'lucide-react';
+
+function LinkRow({ link, origin, copiedId, onCopy, onEdit, onQr, onDelete }: {
+  link: LinkType; origin: string; copiedId: string | null;
+  onCopy: (id: string, code: string) => void;
+  onEdit: (link: LinkType) => void;
+  onQr: (link: LinkType) => void;
+  onDelete: (id: string) => void;
+}) {
+  const isExpired = link.expiresAt && Date.now() > link.expiresAt;
+  return (
+    <div className={`ghost-card p-5 ${link.isActive && !isExpired ? '' : 'opacity-60'}`}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span onClick={() => window.location.href = `${origin}/${link.shortCode}`}
+              className="font-mono text-sm text-ecto-green hover:underline cursor-pointer flex items-center gap-1">
+              /{link.shortCode} <ExternalLink className="h-3 w-3" />
+            </span>
+            {link.password && <span className="font-mono text-[8px] tracking-[0.15em] uppercase text-ecto-green/50 border border-ecto-green/20 rounded-full px-2 py-0.5 flex items-center gap-1"><Lock className="h-2.5 w-2.5" />Pass</span>}
+            {link.expiresAt && <span className={`font-mono text-[8px] tracking-[0.15em] uppercase rounded-full px-2 py-0.5 border ${isExpired ? 'text-red-400/60 border-red-400/20' : 'text-ecto-green/50 border-ecto-green/20'}`}>{isExpired ? 'Expired' : 'Timer'}</span>}
+            <span className={`font-mono text-[8px] tracking-[0.15em] uppercase rounded-full px-2 py-0.5 border ${link.isActive && !isExpired ? 'text-ecto-green border-ecto-green/30' : 'text-ghost-white/30 border-ghost-white/10'}`}>
+              {link.isActive && !isExpired ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+          <p className="font-body text-xs text-ghost-white/40 truncate max-w-md">
+            {link.longUrl}
+          </p>
+          <span className="font-mono text-[9px] text-ghost-white/20">
+            {new Date(link.createdAt).toLocaleDateString()}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 self-stretch sm:self-auto border-t border-glass-border sm:border-none pt-3 sm:pt-0">
+          <button onClick={() => onEdit(link)}
+            className="font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 hover:text-ecto-green/60 border border-glass-border rounded-lg px-2.5 py-1.5 transition-colors">Edit</button>
+          <button onClick={() => onCopy(link.id, link.shortCode)}
+            className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors" title="Copy">
+            {copiedId === link.id ? <Check className="h-3.5 w-3.5 text-ecto-green" /> : <Copy className="h-3.5 w-3.5" />}
+          </button>
+          <button onClick={() => onQr(link)}
+            className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors" title="QR Code">
+            <QrCode className="h-3.5 w-3.5" />
+          </button>
+          <a href={`${origin}/${link.shortCode}`} target="_blank" rel="noopener noreferrer"
+            className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors inline-flex" title="Open link">
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+          <button onClick={() => onDelete(link.id)}
+            className="rounded-lg bg-white/[0.04] p-2 text-red-400/50 hover:text-red-400 border border-glass-border transition-colors" title="Delete">
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -17,6 +73,7 @@ export default function DashboardPage() {
   const [origin, setOrigin] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [message, setMessage] = useState('');
+  const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
@@ -66,13 +123,56 @@ export default function DashboardPage() {
     } catch {}
   };
 
-  const filteredLinks = links.filter(link =>
+  const toggleBatch = (batchId: string) => {
+    setExpandedBatches(prev => {
+      const next = new Set(prev);
+      if (next.has(batchId)) next.delete(batchId);
+      else next.add(batchId);
+      return next;
+    });
+  };
+
+  const userLinks = links.filter(link =>
     !user || link.userId === user.id || link.userId === 'user-default'
   ).filter(link =>
     search === '' || link.shortCode.toLowerCase().includes(search.toLowerCase()) || link.longUrl.toLowerCase().includes(search.toLowerCase()) || (link.customAlias?.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const displayLinks = showAll ? filteredLinks : filteredLinks.slice(0, 10);
+  const { batches, individualLinks } = useMemo(() => {
+    const byBatch = new Map<string, LinkType[]>();
+    const individual: LinkType[] = [];
+    for (const link of userLinks) {
+      if (link.batchId) {
+        const arr = byBatch.get(link.batchId) || [];
+        arr.push(link);
+        byBatch.set(link.batchId, arr);
+      } else {
+        individual.push(link);
+      }
+    }
+    const sortedBatches = Array.from(byBatch.entries())
+      .map(([batchId, links]) => ({ batchId, links: links.sort((a, b) => a.createdAt - b.createdAt) }))
+      .sort((a, b) => b.links[0].createdAt - a.links[0].createdAt);
+    return { batches: sortedBatches, individualLinks: individual.sort((a, b) => b.createdAt - a.createdAt) };
+  }, [userLinks]);
+
+  const allItems = useMemo(() => {
+    const items: { type: 'batch'; batchId: string; links: LinkType[] } | { type: 'individual'; link: LinkType }[] = [];
+    const list: ({ type: 'batch'; batchId: string; links: LinkType[] } | { type: 'individual'; link: LinkType })[] = [];
+    for (const batch of batches) {
+      list.push({ type: 'batch', batchId: batch.batchId, links: batch.links });
+    }
+    for (const link of individualLinks) {
+      list.push({ type: 'individual', link });
+    }
+    return list.sort((a, b) => {
+      const aTime = a.type === 'batch' ? a.links[0].createdAt : a.link.createdAt;
+      const bTime = b.type === 'batch' ? b.links[0].createdAt : b.link.createdAt;
+      return bTime - aTime;
+    });
+  }, [batches, individualLinks]);
+
+  const displayItems = showAll ? allItems : allItems.slice(0, 10);
 
   if (!user) return null;
 
@@ -108,7 +208,7 @@ export default function DashboardPage() {
       )}
 
       {/* LINK LIST */}
-      {filteredLinks.length === 0 ? (
+      {userLinks.length === 0 ? (
         <div className="glass rounded-2xl p-16 text-center space-y-4">
           <div className="font-mono text-4xl text-ecto-green/20">~</div>
           <h3 className="font-display text-sm tracking-[0.1em] text-ghost-white/60">No links found</h3>
@@ -116,71 +216,68 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {displayLinks.map(link => {
-            const isExpired = link.expiresAt && Date.now() > link.expiresAt;
-            return (
-              <div key={link.id} className={`ghost-card p-5 ${link.isActive && !isExpired ? '' : 'opacity-60'}`}>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="space-y-1.5 flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span onClick={() => window.location.href = `${origin}/${link.shortCode}`}
-                        className="font-mono text-sm text-ecto-green hover:underline cursor-pointer flex items-center gap-1">
-                        /{link.shortCode} <ExternalLink className="h-3 w-3" />
-                      </span>
-                      {link.password && <span className="font-mono text-[8px] tracking-[0.15em] uppercase text-ecto-green/50 border border-ecto-green/20 rounded-full px-2 py-0.5 flex items-center gap-1"><Lock className="h-2.5 w-2.5" />Pass</span>}
-                      {link.expiresAt && <span className={`font-mono text-[8px] tracking-[0.15em] uppercase rounded-full px-2 py-0.5 border ${isExpired ? 'text-red-400/60 border-red-400/20' : 'text-ecto-green/50 border-ecto-green/20'}`}>{isExpired ? 'Expired' : 'Timer'}</span>}
-                      <span className={`font-mono text-[8px] tracking-[0.15em] uppercase rounded-full px-2 py-0.5 border ${link.isActive && !isExpired ? 'text-ecto-green border-ecto-green/30' : 'text-ghost-white/30 border-ghost-white/10'}`}>
-                        {link.isActive && !isExpired ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                    {editingLink?.id === link.id ? (
-                      <div className="flex items-center gap-2 mt-2">
-                        <input type="url" value={editUrl} onChange={e => setEditUrl(e.target.value)}
-                          className="flex-1 h-8 rounded-full bg-white/[0.04] border border-glass-border px-3 text-xs text-ghost-white outline-none focus:border-ecto-green/40 font-body" />
-                        <button onClick={handleSaveEdit}
-                          className="font-mono text-[9px] tracking-[0.15em] uppercase text-ecto-green hover:text-ecto-green/80">Save</button>
-                        <button onClick={() => setEditingLink(null)} className="font-mono text-[9px] tracking-[0.15em] uppercase text-ghost-white/30 hover:text-ghost-white/60">Cancel</button>
+          {displayItems.map(item => {
+            if (item.type === 'batch') {
+              const expanded = expandedBatches.has(item.batchId);
+              return (
+                <div key={item.batchId} className="ghost-card overflow-hidden">
+                  <button onClick={() => toggleBatch(item.batchId)}
+                    className="w-full flex items-center justify-between p-5 hover:bg-white/[0.02] transition-colors text-left">
+                    <div className="flex items-center gap-3">
+                      <Layers className="h-5 w-5 text-ecto-green/60" />
+                      <div>
+                        <span className="font-mono text-sm text-ghost-white">Batch</span>
+                        <span className="font-body text-xs text-ghost-white/40 ml-3">{item.links.length} links</span>
                       </div>
-                    ) : (
-                      <p className="font-body text-xs text-ghost-white/40 truncate max-w-md">
-                        {link.longUrl}
-                      </p>
-                    )}
-                    <span className="font-mono text-[9px] text-ghost-white/20">
-                      {new Date(link.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 self-stretch sm:self-auto border-t border-glass-border sm:border-none pt-3 sm:pt-0">
-                    <button onClick={() => { setEditingLink(link); setEditUrl(link.longUrl); }}
-                      className="font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 hover:text-ecto-green/60 border border-glass-border rounded-lg px-2.5 py-1.5 transition-colors">Edit</button>
-                    <button onClick={() => handleCopy(link.id, link.shortCode)}
-                      className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors" title="Copy">
-                      {copiedId === link.id ? <Check className="h-3.5 w-3.5 text-ecto-green" /> : <Copy className="h-3.5 w-3.5" />}
-                    </button>
-                    <button onClick={() => setActiveQrLink(link)}
-                      className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors" title="QR Code">
-                      <QrCode className="h-3.5 w-3.5" />
-                    </button>
-                    <a href={`${origin}/${link.shortCode}`} target="_blank" rel="noopener noreferrer"
-                      className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors inline-flex" title="Open link">
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                    <button onClick={() => handleDelete(link.id)}
-                      className="rounded-lg bg-white/[0.04] p-2 text-red-400/50 hover:text-red-400 border border-glass-border transition-colors" title="Delete">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-[9px] text-ghost-white/20">
+                        {new Date(item.links[0].createdAt).toLocaleDateString()}
+                      </span>
+                      {expanded ? <ChevronDown className="h-4 w-4 text-ghost-white/40" /> : <ChevronRight className="h-4 w-4 text-ghost-white/40" />}
+                    </div>
+                  </button>
+                  {expanded && (
+                    <div className="border-t border-glass-border px-5 pb-5 pt-3 space-y-3">
+                      {item.links.map(link => (
+                        <LinkRow key={link.id} link={link} origin={origin} copiedId={copiedId}
+                          onCopy={handleCopy} onEdit={setEditingLink} onQr={setActiveQrLink} onDelete={handleDelete} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
+              );
+            }
+            return (
+              <LinkRow key={item.link.id} link={item.link} origin={origin} copiedId={copiedId}
+                onCopy={handleCopy} onEdit={setEditingLink} onQr={setActiveQrLink} onDelete={handleDelete} />
             );
           })}
-          {filteredLinks.length > 10 && !showAll && (
+          {allItems.length > 10 && !showAll && (
             <button onClick={() => setShowAll(true)}
               className="w-full glass rounded-xl py-3 text-center font-mono text-[10px] tracking-[0.15em] uppercase text-ecto-green/60 hover:text-ecto-green transition-colors flex items-center justify-center gap-2">
-              <ChevronDown className="h-3 w-3" /> Show all ({filteredLinks.length - 10} more)
+              <ChevronDown className="h-3 w-3" /> Show all ({allItems.length - 10} more)
             </button>
           )}
+        </div>
+      )}
+
+      {/* EDIT INLINE */}
+      {editingLink && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center px-4">
+          <div className="fixed inset-0 bg-bg-void/70 backdrop-blur-sm" onClick={() => setEditingLink(null)} />
+          <div className="glass-strong w-full max-w-md p-6 rounded-3xl relative z-10 space-y-4">
+            <h3 className="font-display text-sm tracking-[0.1em] text-ghost-white">Edit destination</h3>
+            <p className="font-mono text-[10px] text-ecto-green">/{editingLink.shortCode}</p>
+            <input type="url" value={editUrl} onChange={e => setEditUrl(e.target.value)}
+              className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white outline-none focus:border-ecto-green/40 font-body" />
+            <div className="flex gap-2">
+              <button onClick={handleSaveEdit}
+                className="btn-ghost justify-center text-[10px] flex-1">Save</button>
+              <button onClick={() => setEditingLink(null)}
+                className="flex-1 h-10 rounded-full border border-glass-border text-[10px] font-mono tracking-[0.1em] uppercase text-ghost-white/40 hover:text-ghost-white transition-colors">Cancel</button>
+            </div>
+          </div>
         </div>
       )}
 
