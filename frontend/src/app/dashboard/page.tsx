@@ -14,12 +14,12 @@ function LinkRow({ link, origin, copiedId, onCopy, onEdit, onQr, onDelete }: {
 }) {
   const isExpired = link.expiresAt && Date.now() > link.expiresAt;
   return (
-    <div className={`ghost-card p-5 ${link.isActive && !isExpired ? '' : 'opacity-60'}`}>
+    <div className={`ghost-card p-6 ${link.isActive && !isExpired ? '' : 'opacity-60'}`}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1.5 flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span onClick={() => window.location.href = `${origin}/${link.shortCode}`}
-              className="font-mono text-sm text-ecto-green hover:underline cursor-pointer flex items-center gap-1">
+              className="font-mono text-base text-ecto-green hover:underline cursor-pointer flex items-center gap-1">
               /{link.shortCode} <ExternalLink className="h-3 w-3" />
             </span>
             {link.password && <span className="font-mono text-[8px] tracking-[0.15em] uppercase text-ecto-green/50 border border-ecto-green/20 rounded-full px-2 py-0.5 flex items-center gap-1"><Lock className="h-2.5 w-2.5" />Pass</span>}
@@ -28,7 +28,7 @@ function LinkRow({ link, origin, copiedId, onCopy, onEdit, onQr, onDelete }: {
               {link.isActive && !isExpired ? 'Active' : 'Inactive'}
             </span>
           </div>
-          <p className="font-body text-xs text-ghost-white/40 truncate">
+          <p className="font-body text-sm text-ghost-white/40 truncate">
             {link.longUrl}
           </p>
           <span className="font-mono text-[9px] text-ghost-white/20">
@@ -182,7 +182,7 @@ export default function DashboardPage() {
   if (!user) return null;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:py-16 sm:px-8 lg:px-12 space-y-8">
+    <div className="px-4 sm:px-10 lg:px-16 xl:px-24 py-8 sm:py-16 space-y-8">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-glass-border pb-6 gap-4">
         <div>
@@ -227,9 +227,9 @@ export default function DashboardPage() {
               return (
                 <div key={item.batchId} className="ghost-card overflow-hidden">
                   <button onClick={() => toggleBatch(item.batchId)}
-                    className="w-full flex items-center justify-between p-5 hover:bg-white/[0.02] transition-colors text-left">
-                    <div className="flex items-center gap-3">
-                      <Layers className="h-5 w-5 text-ecto-green/60" />
+                    className="w-full flex items-center justify-between p-5 lg:p-6 hover:bg-white/[0.02] transition-colors text-left">
+                    <div className="flex items-center gap-4">
+                      <Layers className="h-5 w-5 lg:h-6 lg:w-6 text-ecto-green/60" />
                       <div>
                         <span className="font-mono text-sm text-ghost-white">Batch</span>
                         <span className="font-body text-xs text-ghost-white/40 ml-3">{item.links.length} links</span>
@@ -243,7 +243,7 @@ export default function DashboardPage() {
                     </div>
                   </button>
                   {expanded && (
-                    <div className="border-t border-glass-border px-5 pb-5 pt-3 space-y-3">
+                    <div className="border-t border-glass-border px-5 lg:px-6 pb-5 lg:pb-6 pt-3 space-y-3">
                       {item.links.map(link => (
                         <LinkRow key={link.id} link={link} origin={origin} copiedId={copiedId}
                           onCopy={handleCopy} onEdit={setEditingLink} onQr={setActiveQrLink} onDelete={handleDelete} />
