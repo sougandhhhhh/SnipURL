@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSnapStore } from '../context/store';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Code2 } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -65,6 +65,9 @@ export default function Navbar() {
             </div>
 
             <div className="hidden md:flex items-center space-x-4">
+              <a href="https://github.com/sougandhhhhh/SnipURL" target="_blank" rel="noopener noreferrer" className="text-ghost-white/40 hover:text-ghost-white transition-colors">
+                <Code2 className="h-4 w-4" />
+              </a>
               {user ? (
                 <button onClick={() => setShowLogoutModal(true)} className="font-mono text-[10px] tracking-[0.15em] uppercase text-red-400/70 hover:text-red-400 border border-red-400/30 hover:border-red-400 rounded-full px-4 py-1.5 transition-colors">
                   Logout
@@ -96,7 +99,10 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
-            <div className="border-t border-glass-border pt-3 mt-3">
+            <div className="flex items-center gap-3 border-t border-glass-border pt-3 mt-3">
+              <a href="https://github.com/sougandhhhhh/SnipURL" target="_blank" rel="noopener noreferrer" className="text-ghost-white/40 hover:text-ghost-white transition-colors">
+                <Code2 className="h-4 w-4" />
+              </a>
               {user ? (
                 <button onClick={() => setShowLogoutModal(true)} className="w-full text-center text-[10px] font-mono tracking-[0.15em] uppercase text-red-400/70 border border-red-400/30 rounded-full py-2">
                   Logout

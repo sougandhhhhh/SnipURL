@@ -161,7 +161,7 @@ export default function LandingPage() {
           <span className="text-ecto-green drop-shadow-[0_0_30px_rgba(57,255,144,0.3)]">Void</span>
         </h1>
         <p className="mt-6 mx-auto max-w-xl text-base sm:text-lg font-body text-ghost-white/50 leading-relaxed">
-          Edge-deployed URL shortening with ghost-light redirects.
+          Short links, quick redirects, and instant URL expansion.
         </p>
       </section>
 
