@@ -14,7 +14,7 @@ export default function Footer() {
               <span className="text-ghost-white">SNIP</span><span className="text-ecto-green">URL</span>
             </span>
             </Link>
-            <p className="text-xs font-body text-ghost-white/40 leading-relaxed">
+            <p className="text-xs font-body text-ghost-white leading-relaxed">
               Fast, secure URL shortening and expansion in one place.
             </p>
           </div>
@@ -43,7 +43,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-glass-border pt-5 flex flex-col md:flex-row justify-between items-center text-[10px] font-mono tracking-[0.1em] uppercase text-ghost-white/20 gap-4">
+        <div className="mt-8 border-t border-glass-border pt-5 flex flex-col md:flex-row justify-between items-center text-[10px] font-mono tracking-[0.1em] uppercase text-ghost-white gap-4">
           <span>&copy; {new Date().getFullYear()} SnipURL. Spectral rights reserved.</span>
           <div className="flex space-x-6">
             <Link href="/privacy" className="hover:text-ghost-white/50 transition-colors">Privacy</Link>

@@ -50,6 +50,22 @@ export default function DashboardPage() {
     setMessage('Link updated');
   };
 
+  const handleDownloadQr = async () => {
+    if (!activeQrLink) return;
+    try {
+      const resp = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=${encodeURIComponent(`${origin}/${activeQrLink.shortCode}`)}`);
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `qr-${activeQrLink.shortCode}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {}
+  };
+
   const filteredLinks = links.filter(link =>
     !user || link.userId === user.id || link.userId === 'user-default'
   ).filter(link =>
@@ -181,11 +197,10 @@ export default function DashboardPage() {
             <div className="mx-auto bg-white p-3 rounded-2xl w-48 h-48 flex items-center justify-center shadow-lg">
               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${origin}/${activeQrLink.shortCode}`)}`} alt="QR" className="h-44 w-44" />
             </div>
-            <a href={`https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=${encodeURIComponent(`${origin}/${activeQrLink.shortCode}`)}`}
-              download={`qr-${activeQrLink.shortCode}.png`}
+            <button onClick={handleDownloadQr}
               className="btn-ghost justify-center text-[10px] w-full">
               <Download className="h-3 w-3" /> Download
-            </a>
+            </button>
           </div>
         </div>
       )}
