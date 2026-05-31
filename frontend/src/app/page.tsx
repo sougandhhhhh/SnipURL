@@ -199,7 +199,7 @@ export default function LandingPage() {
           </div>
 
           {mode === 'shorten' ? (
-            <form onSubmit={handleShorten} className="space-y-4">
+            <form onSubmit={handleShorten} className="space-y-5">
               <div className="flex flex-col sm:flex-row gap-3">
                 <input
                   type="url"
@@ -207,32 +207,44 @@ export default function LandingPage() {
                   value={longUrl}
                   onChange={e => setLongUrl(e.target.value)}
                   placeholder="Paste a long URL..."
-                  className="flex-1 h-12 rounded-full bg-white/[0.04] border border-glass-border px-5 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+                  className="flex-1 h-14 rounded-full bg-white/[0.04] border border-glass-border px-6 text-base text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-ghost justify-center h-12 px-6 text-[10px]"
+                  className="btn-ghost justify-center h-14 px-8 text-xs"
                 >
                   {loading ? 'Summoning...' : 'Shorten'}
-                  <ArrowRight className="h-3 w-3" />
+                  <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <input type="text" value={customAlias} onChange={e => setCustomAlias(e.target.value)}
-                  placeholder="Alias" className="h-9 rounded-full bg-white/[0.04] border border-glass-border px-3.5 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                  placeholder="Protect" className="h-9 rounded-full bg-white/[0.04] border border-glass-border px-3.5 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
-                <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)}
-                  className="h-9 rounded-full bg-white/[0.04] border border-glass-border px-3.5 text-xs text-ghost-white focus:border-ecto-green/40 focus:outline-none transition-colors font-body [color-scheme:dark]" />
-                <label className="flex items-center justify-center gap-2 h-9 rounded-full bg-white/[0.04] border border-glass-border px-3.5 cursor-pointer hover:border-ecto-green/40 transition-colors">
-                  <div className={`relative w-8 h-4 rounded-full transition-colors ${isOneTime ? 'bg-ecto-green' : 'bg-white/10'}`}>
-                    <input type="checkbox" checked={isOneTime} onChange={e => setIsOneTime(e.target.checked)} className="sr-only" />
-                    <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isOneTime ? 'translate-x-4' : ''}`} />
-                  </div>
-                  <span className="font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/50">One-time</span>
-                </label>
+                <div className="space-y-1">
+                  <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 px-1">Alias</span>
+                  <input type="text" value={customAlias} onChange={e => setCustomAlias(e.target.value)}
+                    placeholder="custom-name" className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
+                </div>
+                <div className="space-y-1">
+                  <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 px-1">Protect</span>
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                    placeholder="&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;" className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
+                </div>
+                <div className="space-y-1">
+                  <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 px-1">Expire</span>
+                  <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)}
+                    className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white focus:border-ecto-green/40 focus:outline-none transition-colors font-body [color-scheme:dark]" />
+                </div>
+                <div className="space-y-1">
+                  <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 px-1">One-time</span>
+                  <label className="flex items-center justify-center gap-2 h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 cursor-pointer hover:border-ecto-green/40 transition-colors">
+                    <div className={`relative w-8 h-4 rounded-full transition-colors ${isOneTime ? 'bg-ecto-green' : 'bg-white/10'}`}>
+                      <input type="checkbox" checked={isOneTime} onChange={e => setIsOneTime(e.target.checked)} className="sr-only" />
+                      <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${isOneTime ? 'translate-x-4' : ''}`} />
+                    </div>
+                    <span className="font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/50">{isOneTime ? 'On' : 'Off'}</span>
+                  </label>
+                </div>
               </div>
             </form>
           ) : (

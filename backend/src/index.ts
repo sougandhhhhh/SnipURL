@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, and, or, sql, desc } from 'drizzle-orm';
 import * as schema from './db/schema';
-import { encodeSequential, validateUrl, isSpamOrMalicious } from './utils/helpers';
+import { encodeSequential, validateUrl, isSpamOrMalicious, generateShortCode } from './utils/helpers';
 
 interface Env {
   DB: D1Database;
@@ -248,12 +248,15 @@ app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
         return c.json({ error: 'Custom alias already in use' }, 409);
       }
     } else {
-      // Sequential short code (a, b, c, ..., z, aa, ab, ...)
-      const countResult = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(schema.links);
-      const totalCount = Number(countResult[0]?.count ?? 0);
-      shortCode = encodeSequential(totalCount + 1);
+      // Random short code with collision retry
+      let attempts = 0;
+      do {
+        shortCode = generateShortCode(6);
+        const existing = await db.select().from(schema.links).where(eq(schema.links.shortCode, shortCode)).limit(1);
+        if (existing.length === 0) break;
+        attempts++;
+      } while (attempts < 5);
+      if (attempts >= 5) return c.json({ error: 'Could not generate unique code' }, 500);
     }
 
     const newLink = {
@@ -319,8 +322,6 @@ app.post('/api/v1/shorten/bulk', authenticateApiKey, async (c) => {
       return c.json({ error: 'Provide an array of URLs in the "urls" field' }, 400);
     }
 
-    const countResult = await db.select({ count: sql<number>`count(*)` }).from(schema.links);
-    let seqOffset = Number(countResult[0]?.count ?? 0);
     const results: { url: string; shortCode: string; shortUrl: string; error?: string }[] = [];
     const displayDomain = (c.env.FRONTEND_URL || '').replace(/\/+$/, '').trim() || c.req.url.replace('/api/v1/shorten/bulk', '');
 
@@ -335,8 +336,18 @@ app.post('/api/v1/shorten/bulk', authenticateApiKey, async (c) => {
         continue;
       }
 
-      seqOffset++;
-      const shortCode = encodeSequential(seqOffset);
+      let shortCode = '';
+      let attempts = 0;
+      do {
+        shortCode = generateShortCode(6);
+        const existing = await db.select().from(schema.links).where(eq(schema.links.shortCode, shortCode)).limit(1);
+        if (existing.length === 0) break;
+        attempts++;
+      } while (attempts < 5);
+      if (attempts >= 5) {
+        results.push({ url: targetUrl, shortCode: '', shortUrl: '', error: 'Could not generate unique code' });
+        continue;
+      }
       const newLink = {
         id: crypto.randomUUID(),
         userId,
