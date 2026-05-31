@@ -643,11 +643,18 @@ app.get('/api/v1/resolve/:code', async (c) => {
   if (!linkData) {
     const db = drizzle(c.env.DB, { schema });
     try {
-      const rows = await db
+      let rows = await db
         .select()
         .from(schema.links)
         .where(eq(schema.links.shortCode, code))
         .limit(1);
+      if (rows.length === 0) {
+        rows = await db
+          .select()
+          .from(schema.links)
+          .where(eq(schema.links.customAlias, code))
+          .limit(1);
+      }
       if (rows.length > 0) {
         const row = rows[0];
         linkData = {
