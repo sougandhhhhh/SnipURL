@@ -74,6 +74,7 @@ export default function DashboardPage() {
   const [showAll, setShowAll] = useState(false);
   const [message, setMessage] = useState('');
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
@@ -94,10 +95,14 @@ export default function DashboardPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Permanently purge this shortened link?')) {
-      await deleteLink(id);
-      setMessage('Link deleted');
-    }
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    await deleteLink(deleteConfirmId);
+    setDeleteConfirmId(null);
+    setMessage('Link deleted');
   };
 
   const handleSaveEdit = async () => {
@@ -275,6 +280,23 @@ export default function DashboardPage() {
               <button onClick={handleSaveEdit}
                 className="btn-ghost justify-center text-[10px] flex-1">Save</button>
               <button onClick={() => setEditingLink(null)}
+                className="flex-1 h-10 rounded-full border border-glass-border text-[10px] font-mono tracking-[0.1em] uppercase text-ghost-white/40 hover:text-ghost-white transition-colors">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="fixed inset-0 bg-bg-void/70 backdrop-blur-sm" onClick={() => setDeleteConfirmId(null)} />
+          <div className="glass-strong w-full max-w-sm p-6 rounded-3xl relative z-10 text-center space-y-5">
+            <h3 className="font-display text-sm tracking-[0.1em] text-ghost-white">Delete link?</h3>
+            <p className="font-body text-xs text-ghost-white/40">This action cannot be undone. The shortened URL will stop working immediately.</p>
+            <div className="flex gap-2">
+              <button onClick={confirmDelete}
+                className="flex-1 h-10 rounded-full bg-red-400/10 border border-red-400/30 text-[10px] font-mono tracking-[0.1em] uppercase text-red-400 hover:bg-red-400/20 transition-colors">Delete</button>
+              <button onClick={() => setDeleteConfirmId(null)}
                 className="flex-1 h-10 rounded-full border border-glass-border text-[10px] font-mono tracking-[0.1em] uppercase text-ghost-white/40 hover:text-ghost-white transition-colors">Cancel</button>
             </div>
           </div>
