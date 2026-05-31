@@ -45,6 +45,9 @@ export default function Footer() {
               <a href="https://sougandhkp.me" target="_blank" rel="noopener noreferrer" className="text-ghost-white/40 hover:text-ghost-white transition-colors" title="Website">
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               </a>
+              <a href="mailto:sougandh7ss@gmail.com" className="text-ghost-white/40 hover:text-ghost-white transition-colors" title="Email">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              </a>
             </div>
           </div>
         </div>
