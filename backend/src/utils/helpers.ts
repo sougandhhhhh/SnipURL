@@ -36,7 +36,7 @@ const BLOCKED_DOMAINS = [
   'yopmail.com',
   'getairmail.com',
   'dispostable.com',
-  'bit.ly', // Prevent nesting recursion
+  'bit.ly',
   'tinyurl.com',
   't.co',
   'ow.ly'
@@ -46,24 +46,10 @@ export function isSpamOrMalicious(urlString: string): boolean {
   try {
     const url = new URL(urlString);
     const hostname = url.hostname.toLowerCase();
-    
-    // Check direct blocks and subdomains
     return BLOCKED_DOMAINS.some(blocked => 
       hostname === blocked || hostname.endsWith('.' + blocked)
     );
   } catch {
-    return true; // If we can't parse it, treat it as unsafe/malformed
+    return true;
   }
-}
-
-/**
- * Generates a random alphanumeric short code of given length.
- */
-export function generateShortCode(length: number = 6): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
 }
