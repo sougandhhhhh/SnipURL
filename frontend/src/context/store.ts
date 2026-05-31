@@ -43,6 +43,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  dateOfBirth?: string | null;
   role: 'user' | 'admin';
 }
 
@@ -80,6 +81,9 @@ interface SnapStore {
   // Theme Toggles
   toggleTheme: () => void;
   setTheme: (theme: 'dark' | 'light') => void;
+
+  // Utility
+  apiFetch: (path: string, options?: RequestInit) => Promise<any>;
 }
 
 // Generates high quality pre-seeded chronological analytical clicks over the last 14 days
@@ -293,6 +297,8 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     theme: getInitialTheme(),
     loading: false,
 
+    apiFetch,
+
     login: async (email, password) => {
       set({ loading: true });
       const { data, error } = await supabase.auth.signInWithPassword({ email, password: password || '' });
@@ -349,6 +355,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
           id: result.user.id,
           email: result.user.email,
           name: result.user.name,
+          dateOfBirth: result.user.dateOfBirth || null,
           role: result.user.role || 'user',
         };
 

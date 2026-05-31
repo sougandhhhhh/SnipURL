@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSnapStore } from '../../context/store';
 import { supabase } from '../../lib/supabase';
-import { User, Mail, Calendar, Copy, Check, Lock, Eye, EyeOff, Pencil, X as XIcon } from 'lucide-react';
+import { User, Mail, Calendar, Lock, Eye, EyeOff, X as XIcon } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user } = useSnapStore();
-  const [copied, setCopied] = useState(false);
+  const { user, apiFetch } = useSnapStore();
   const [mounted, setMounted] = useState(false);
   const [hasPassword, setHasPassword] = useState(true);
 
@@ -17,6 +16,10 @@ export default function SettingsPage() {
   const [nameInput, setNameInput] = useState('');
   const [nameError, setNameError] = useState('');
   const [nameSaving, setNameSaving] = useState(false);
+
+  const [dobInput, setDobInput] = useState('');
+  const [dobSaving, setDobSaving] = useState(false);
+  const [dobMessage, setDobMessage] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -37,24 +40,31 @@ export default function SettingsPage() {
       const identities = data?.user?.identities ?? [];
       setHasPassword(identities.some(i => i.provider === 'email'));
     });
+    if (user.dateOfBirth) setDobInput(user.dateOfBirth);
   }, [mounted, user, router]);
 
   if (!user) return null;
-
-  const copyId = () => {
-    navigator.clipboard.writeText(user.id);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const handleSaveName = async () => {
     const trimmed = nameInput.trim();
     if (!trimmed) { setNameError('Name cannot be empty.'); return; }
     setNameError('');
     setNameSaving(true);
-    const { error } = await supabase.auth.updateUser({ data: { name: trimmed } });
-    if (error) { setNameError(error.message); setNameSaving(false); return; }
-    window.location.reload();
+    try {
+      await supabase.auth.updateUser({ data: { name: trimmed } });
+      const result = await apiFetch('/api/v1/user/profile', {
+        method: 'PUT',
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (result.user) {
+        useSnapStore.setState({ user: { ...user, name: result.user.name } });
+      }
+      setEditingName(false);
+    } catch (err: any) {
+      setNameError(err.message || 'Failed to save name');
+    } finally {
+      setNameSaving(false);
+    }
   };
 
   const startEditingName = () => {
@@ -66,6 +76,26 @@ export default function SettingsPage() {
   const cancelEditingName = () => {
     setEditingName(false);
     setNameError('');
+  };
+
+  const handleSaveDob = async () => {
+    setDobSaving(true);
+    setDobMessage('');
+    try {
+      const result = await apiFetch('/api/v1/user/profile', {
+        method: 'PUT',
+        body: JSON.stringify({ dateOfBirth: dobInput || null }),
+      });
+      if (result.user) {
+        useSnapStore.setState({ user: { ...user, dateOfBirth: result.user.dateOfBirth } });
+      }
+      setDobMessage('Date of birth saved');
+      setTimeout(() => setDobMessage(''), 2000);
+    } catch (err: any) {
+      setDobMessage(err.message || 'Failed to save');
+    } finally {
+      setDobSaving(false);
+    }
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -131,16 +161,19 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3 flex-1">
                 <User className="h-4 w-4 text-ecto-green/60 shrink-0" />
                 {editingName ? (
-                  <div className="flex-1 flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-2 relative">
                     <input type="text" value={nameInput} onChange={e => setNameInput(e.target.value)}
-                      className="flex-1 h-9 rounded-full bg-white/[0.04] border border-glass-border px-4 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" autoFocus />
-                    <button onClick={handleSaveName} disabled={nameSaving}
-                      className="font-mono text-[10px] tracking-[0.1em] uppercase text-ecto-green hover:text-ecto-green/80 transition-colors">
-                      {nameSaving ? '...' : 'Save'}
-                    </button>
-                    <button onClick={cancelEditingName} className="text-ghost-white/40 hover:text-ghost-white transition-colors">
-                      <XIcon className="h-4 w-4" />
-                    </button>
+                      className="flex-1 h-9 rounded-full bg-white/[0.04] border border-glass-border px-4 pr-16 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" autoFocus />
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      <button onClick={handleSaveName} disabled={nameSaving}
+                        className="h-7 px-3 rounded-full border border-ecto-green/40 text-[10px] font-mono tracking-[0.1em] uppercase text-ecto-green hover:bg-ecto-green/10 transition-colors flex items-center gap-1">
+                        {nameSaving ? '...' : 'Save'}
+                      </button>
+                      <button onClick={cancelEditingName} className="h-7 w-7 flex items-center justify-center rounded-full text-ghost-white/40 hover:text-ghost-white hover:bg-white/[0.06] transition-colors">
+                        <XIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    {nameError && <p className="absolute -bottom-5 left-4 text-[10px] text-red-400">{nameError}</p>}
                   </div>
                 ) : (
                   <>
@@ -148,9 +181,8 @@ export default function SettingsPage() {
                       <p className="font-body text-sm text-ghost-white/60">Name</p>
                       <p className="font-body text-sm text-ghost-white">{user.name}</p>
                     </div>
-                    {nameError && <p className="text-[10px] text-red-400">{nameError}</p>}
                     <button onClick={startEditingName} className="ml-auto text-ghost-white/30 hover:text-ecto-green transition-colors">
-                      <Pencil className="h-3.5 w-3.5" />
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                     </button>
                   </>
                 )}
@@ -158,8 +190,8 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex items-center justify-between py-3 border-b border-glass-border">
-              <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-ecto-green/60" />
+              <div className="flex items-center gap-3 flex-1">
+                <Mail className="h-4 w-4 text-ecto-green/60 shrink-0" />
                 <div>
                   <p className="font-body text-sm text-ghost-white/60">Email</p>
                   <p className="font-body text-sm text-ghost-white">{user.email}</p>
@@ -168,16 +200,21 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex items-center justify-between py-3">
-              <div className="flex items-center gap-3">
-                <Calendar className="h-4 w-4 text-ecto-green/60" />
-                <div>
-                  <p className="font-body text-sm text-ghost-white/60">User ID</p>
-                  <p className="font-body text-xs text-ghost-white/40 font-mono truncate max-w-[220px]">{user.id}</p>
+              <div className="flex items-center gap-3 flex-1">
+                <Calendar className="h-4 w-4 text-ecto-green/60 shrink-0" />
+                <div className="flex-1">
+                  <p className="font-body text-sm text-ghost-white/60">Date of Birth</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input type="date" value={dobInput} onChange={e => setDobInput(e.target.value)}
+                      className="flex-1 h-9 rounded-full bg-white/[0.04] border border-glass-border px-4 text-sm text-ghost-white focus:border-ecto-green/40 focus:outline-none transition-colors font-body [color-scheme:dark] max-w-[180px]" />
+                    <button onClick={handleSaveDob} disabled={dobSaving}
+                      className="h-7 px-3 rounded-full border border-ecto-green/40 text-[10px] font-mono tracking-[0.1em] uppercase text-ecto-green hover:bg-ecto-green/10 transition-colors">
+                      {dobSaving ? '...' : 'Save'}
+                    </button>
+                  </div>
+                  {dobMessage && <p className="text-[10px] text-ecto-green/70 mt-1">{dobMessage}</p>}
                 </div>
               </div>
-              <button onClick={copyId} className="text-ghost-white/40 hover:text-ecto-green transition-colors">
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </button>
             </div>
           </div>
         </div>
