@@ -130,6 +130,9 @@ export default function LandingPage() {
               <button onClick={handleCopy} className="text-ecto-green hover:text-ecto-green/80 shrink-0 p-1.5">
                 {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
               </button>
+              <button onClick={() => window.open(result.shortUrl, '_blank')} className="text-ecto-green hover:text-ecto-green/80 shrink-0 p-1.5" title="Open link">
+                <ExternalLink className="h-5 w-5" />
+              </button>
             </div>
 
             {!user && (
