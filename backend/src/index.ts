@@ -601,6 +601,43 @@ app.delete('/api/v1/links/:id', authenticateApiKey, async (c) => {
   }
 });
 
+// D2. Claim an unauthenticated link (transfer from user-default to authenticated user)
+app.post('/api/v1/links/claim', authenticateApiKey, async (c) => {
+  try {
+    const userId = c.get('userId');
+    const body = await c.req.json();
+    const { shortCode } = body;
+    if (!shortCode) return c.json({ error: 'shortCode required' }, 400);
+    if (userId === 'user-default') return c.json({ error: 'Must be authenticated to claim links' }, 401);
+
+    const db = drizzle(c.env.DB, { schema });
+
+    const [link] = await db
+      .select()
+      .from(schema.links)
+      .where(and(eq(schema.links.shortCode, shortCode), eq(schema.links.userId, 'user-default')))
+      .limit(1);
+
+    if (!link) return c.json({ error: 'Link not found or already claimed' }, 404);
+
+    await db.update(schema.links).set({ userId }).where(eq(schema.links.id, link.id));
+
+    // Update KV cache with new userId
+    try {
+      const cached = await c.env.KV?.get(`code:${shortCode}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        parsed.userId = userId;
+        await c.env.KV.put(`code:${shortCode}`, JSON.stringify(parsed), { expirationTtl: 600 });
+      }
+    } catch {}
+
+    return c.json({ success: true, link: { ...link, userId } });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to claim link' }, 500);
+  }
+});
+
 // E. Retrieve Analytical Report
 app.get('/api/v1/analytics/:linkId', authenticateApiKey, async (c) => {
   const linkId = c.req.param('linkId');

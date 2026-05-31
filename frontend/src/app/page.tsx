@@ -86,6 +86,7 @@ export default function LandingPage() {
       });
       const baseUrl = (process.env.NEXT_PUBLIC_DISPLAY_DOMAIN || window.location.origin).replace(/\/+$/, '').trim();
       setResult({ shortUrl: `${baseUrl}/${link.shortCode}`, longUrl: link.longUrl, shortCode: link.shortCode });
+      if (!user) sessionStorage.setItem('pendingClaimCode', link.shortCode);
       setGhostKey(k => k + 1);
       setLongUrl('');
       setCustomAlias('');

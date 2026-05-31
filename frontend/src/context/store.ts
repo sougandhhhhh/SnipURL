@@ -365,6 +365,19 @@ export const useSnapStore = create<SnapStore>((set, get) => {
         set({ user, apiKeys: [apiKey], loading: false });
         setLocalStorage('snap-user', user);
         setLocalStorage('snap-apikeys', [{ ...apiKey, keyHash: rawKey || apiKey.keyHash }]);
+
+        // Claim any pending unauthenticated link
+        const pendingCode = typeof window !== 'undefined' ? sessionStorage.getItem('pendingClaimCode') : null;
+        if (pendingCode) {
+          try {
+            await apiFetch('/api/v1/links/claim', {
+              method: 'POST',
+              body: JSON.stringify({ shortCode: pendingCode }),
+            });
+          } catch {}
+          sessionStorage.removeItem('pendingClaimCode');
+        }
+
         await get().fetchLinks?.();
       } catch (err: any) {
         set({ loading: false });
