@@ -63,6 +63,8 @@ export default function LandingPage() {
   const [longUrl, setLongUrl] = useState('');
   const [customAlias, setCustomAlias] = useState('');
   const [password, setPassword] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
+  const [isOneTime, setIsOneTime] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [copied, setCopied] = useState(false);
@@ -80,6 +82,8 @@ export default function LandingPage() {
       const link = await shortenUrl(longUrl, {
         customAlias: customAlias || undefined,
         password: password || undefined,
+        expiresAt: expiresAt ? new Date(expiresAt).getTime() : undefined,
+        isOneTime: isOneTime || undefined,
       });
       const baseUrl = (process.env.NEXT_PUBLIC_DISPLAY_DOMAIN || window.location.origin).replace(/\/+$/, '').trim();
       setResult({ shortUrl: `${baseUrl}/${link.shortCode}`, longUrl: link.longUrl, shortCode: link.shortCode });
@@ -87,6 +91,8 @@ export default function LandingPage() {
       setLongUrl('');
       setCustomAlias('');
       setPassword('');
+      setExpiresAt('');
+      setIsOneTime(false);
       setShowAdvanced(false);
     } catch (err: any) {
       alert(err.message || 'Error shortening URL');
@@ -225,21 +231,38 @@ export default function LandingPage() {
               </button>
 
               {showAdvanced && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <input
-                    type="text"
-                    value={customAlias}
-                    onChange={e => setCustomAlias(e.target.value)}
-                    placeholder="Custom alias (e.g. my-link)"
-                    className="h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
-                  />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Password protect"
-                    className="h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
-                  />
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      value={customAlias}
+                      onChange={e => setCustomAlias(e.target.value)}
+                      placeholder="Custom alias (e.g. my-link)"
+                      className="h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+                    />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="Password protect"
+                      className="h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+                    />
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                    <input
+                      type="datetime-local"
+                      value={expiresAt}
+                      onChange={e => setExpiresAt(e.target.value)}
+                      className="h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white focus:border-ecto-green/40 focus:outline-none transition-colors font-body [color-scheme:dark]"
+                    />
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <div className={`relative w-9 h-5 rounded-full transition-colors ${isOneTime ? 'bg-ecto-green' : 'bg-white/10'}`}>
+                        <input type="checkbox" checked={isOneTime} onChange={e => setIsOneTime(e.target.checked)} className="sr-only" />
+                        <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isOneTime ? 'translate-x-4' : ''}`} />
+                      </div>
+                      <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-ghost-white/50">One-time link</span>
+                    </label>
+                  </div>
                 </div>
               )}
             </form>

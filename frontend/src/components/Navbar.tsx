@@ -38,6 +38,7 @@ export default function Navbar() {
     ? [
         { name: 'Home', href: '/' },
         { name: 'Dashboard', href: '/dashboard' },
+        { name: 'Bulk', href: '/bulk' },
         { name: 'Settings', href: '/settings' },
       ]
     : [];

@@ -38,6 +38,7 @@ app.get('/:code', async (c) => {
     id: string;
     longUrl: string;
     isActive: boolean;
+    isOneTime: boolean;
     password?: string | null;
     expiresAt?: number | null;
   } | null = null;
@@ -76,6 +77,7 @@ app.get('/:code', async (c) => {
           id: link.id,
           longUrl: link.longUrl,
           isActive: link.isActive,
+          isOneTime: link.isOneTime || false,
           password: link.password,
           expiresAt: link.expiresAt,
         };
@@ -109,7 +111,7 @@ app.get('/:code', async (c) => {
     return c.redirect(`${frontendUrl}/p/${code}`);
   }
 
-  // D. Async Click tracking (non-blocking for ultra-fast redirect)
+  // D. Async Click tracking + one-time link deactivation (non-blocking for ultra-fast redirect)
   c.executionCtx.waitUntil(
     (async () => {
       try {
@@ -147,6 +149,14 @@ app.get('/:code', async (c) => {
           browser,
           referrer: referrer.startsWith('http') ? new URL(referrer).hostname : 'Direct',
         });
+
+        // Deactivate one-time links after first access
+        if (linkData?.isOneTime) {
+          await db.update(schema.links)
+            .set({ isActive: false, updatedAt: Date.now() })
+            .where(eq(schema.links.id, linkData.id));
+          try { if (c.env.KV) await c.env.KV.delete(`code:${code}`); } catch {}
+        }
       } catch (err) {
         console.error('Analytics log error:', err);
       }
@@ -206,7 +216,7 @@ const authenticateApiKey = async (c: any, next: any) => {
 app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
   try {
     const body = await c.req.json();
-    const { longUrl, customAlias, password, expiresAt } = body;
+    const { longUrl, customAlias, password, expiresAt, isOneTime } = body;
     const userId = c.get('userId');
     const db = drizzle(c.env.DB, { schema });
 
@@ -253,6 +263,7 @@ app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
       longUrl,
       customAlias: customAlias ? shortCode : null,
       isActive: true,
+      isOneTime: isOneTime === true,
       password: password || null,
       expiresAt: expiresAt ? Number(expiresAt) : null,
       createdAt: Date.now(),
@@ -267,6 +278,7 @@ app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
         id: newLink.id,
         longUrl: newLink.longUrl,
         isActive: newLink.isActive,
+        isOneTime: newLink.isOneTime,
         password: newLink.password,
         expiresAt: newLink.expiresAt,
       };
@@ -285,12 +297,77 @@ app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
       shortUrl,
       longUrl: newLink.longUrl,
       passwordEnabled: !!newLink.password,
+      isOneTime: newLink.isOneTime,
       expiresAt: newLink.expiresAt,
       qrUrl: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shortUrl)}`,
     }, 201);
 
   } catch (err: any) {
     return c.json({ error: err?.message || err?.toString() || 'Database error creating shortened link' }, 500);
+  }
+});
+
+// B. Bulk URL Shorten Endpoint
+app.post('/api/v1/shorten/bulk', authenticateApiKey, async (c) => {
+  try {
+    const body = await c.req.json();
+    const { urls } = body;
+    const userId = c.get('userId');
+    const db = drizzle(c.env.DB, { schema });
+
+    if (!Array.isArray(urls) || urls.length === 0) {
+      return c.json({ error: 'Provide an array of URLs in the "urls" field' }, 400);
+    }
+
+    const countResult = await db.select({ count: sql<number>`count(*)` }).from(schema.links);
+    let seqOffset = Number(countResult[0]?.count ?? 0);
+    const results: { url: string; shortCode: string; shortUrl: string; error?: string }[] = [];
+    const displayDomain = (c.env.FRONTEND_URL || '').replace(/\/+$/, '').trim() || c.req.url.replace('/api/v1/shorten/bulk', '');
+
+    for (const item of urls) {
+      const targetUrl = typeof item === 'string' ? item : item.url;
+      if (!targetUrl || !validateUrl(targetUrl)) {
+        results.push({ url: targetUrl || '', shortCode: '', shortUrl: '', error: 'Invalid URL' });
+        continue;
+      }
+      if (isSpamOrMalicious(targetUrl)) {
+        results.push({ url: targetUrl, shortCode: '', shortUrl: '', error: 'Blocked URL' });
+        continue;
+      }
+
+      seqOffset++;
+      const shortCode = encodeSequential(seqOffset);
+      const newLink = {
+        id: crypto.randomUUID(),
+        userId,
+        shortCode,
+        longUrl: targetUrl,
+        customAlias: null,
+        isActive: true,
+        isOneTime: false,
+        password: null,
+        expiresAt: null,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      try {
+        await db.insert(schema.links).values(newLink);
+        const shortUrl = `${displayDomain}/${shortCode}`;
+        results.push({ url: targetUrl, shortCode, shortUrl });
+        try {
+          await c.env.KV.put(`code:${shortCode}`, JSON.stringify({
+            id: newLink.id, longUrl: newLink.longUrl, isActive: newLink.isActive, isOneTime: false, password: null, expiresAt: null,
+          }), { expirationTtl: 600 });
+        } catch {}
+      } catch (err: any) {
+        results.push({ url: targetUrl, shortCode: '', shortUrl: '', error: err?.message || 'Failed' });
+      }
+    }
+
+    return c.json({ success: true, results, total: results.length }, 201);
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'Bulk shorten failed' }, 500);
   }
 });
 

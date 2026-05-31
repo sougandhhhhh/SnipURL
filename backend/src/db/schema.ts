@@ -15,8 +15,9 @@ export const links = sqliteTable('links', {
   longUrl: text('long_url').notNull(),
   customAlias: text('custom_alias').unique(),
   isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
-  password: text('password'), // Optional password protection
-  expiresAt: integer('expires_at'), // Optional expiration timestamp
+  isOneTime: integer('is_one_time', { mode: 'boolean' }).default(false).notNull(),
+  password: text('password'),
+  expiresAt: integer('expires_at'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull()
 });

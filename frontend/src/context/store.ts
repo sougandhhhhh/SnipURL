@@ -10,6 +10,7 @@ export interface Link {
   longUrl: string;
   customAlias: string | null;
   isActive: boolean;
+  isOneTime: boolean;
   password?: string | null;
   expiresAt: number | null;
   createdAt: number;
@@ -62,7 +63,7 @@ interface SnapStore {
   restoreSession: () => Promise<void>;
 
   // Link Operations
-  shortenUrl: (longUrl: string, options?: { customAlias?: string; password?: string; expiresAt?: number }) => Promise<Link>;
+  shortenUrl: (longUrl: string, options?: { customAlias?: string; password?: string; expiresAt?: number; isOneTime?: boolean }) => Promise<Link>;
   expandUrl: (code: string) => Promise<{ longUrl: string } | { passwordProtected: boolean; shortCode: string }>;
   updateLink: (id: string, updates: Partial<Pick<Link, 'longUrl' | 'isActive' | 'password' | 'expiresAt'>>) => Promise<boolean>;
   deleteLink: (id: string) => Promise<boolean>;
@@ -136,6 +137,7 @@ const initialMockLinks: Link[] = [
     longUrl: 'https://github.com/sougandhhhhh',
     customAlias: 'github',
     isActive: true,
+    isOneTime: false,
     expiresAt: null,
     createdAt: Date.now() - 12 * 24 * 60 * 60 * 1000,
     updatedAt: Date.now() - 12 * 24 * 60 * 60 * 1000,
@@ -148,6 +150,7 @@ const initialMockLinks: Link[] = [
     longUrl: 'https://sougandhhhhh.github.io',
     customAlias: 'portfolio',
     isActive: true,
+    isOneTime: false,
     expiresAt: null,
     createdAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
     updatedAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
@@ -160,6 +163,7 @@ const initialMockLinks: Link[] = [
     longUrl: 'https://tailwindcss.com/docs',
     customAlias: 'tw-docs',
     isActive: true,
+    isOneTime: false,
     expiresAt: null,
     createdAt: Date.now() - 5 * 24 * 60 * 60 * 1000,
     updatedAt: Date.now() - 5 * 24 * 60 * 60 * 1000,
@@ -172,6 +176,7 @@ const initialMockLinks: Link[] = [
     longUrl: 'https://nextjs.org/docs',
     customAlias: 'expired-next',
     isActive: true,
+    isOneTime: false,
     expiresAt: Date.now() - 1 * 24 * 60 * 60 * 1000, // Expired yesterday
     createdAt: Date.now() - 4 * 24 * 60 * 60 * 1000,
     updatedAt: Date.now() - 4 * 24 * 60 * 60 * 1000,
@@ -184,6 +189,7 @@ const initialMockLinks: Link[] = [
     longUrl: 'https://stripe.com',
     customAlias: 'stripe-pay',
     isActive: true,
+    isOneTime: false,
     password: 'securePassword123',
     expiresAt: null,
     createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000,
@@ -380,6 +386,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
           customAlias: options.customAlias,
           password: options.password,
           expiresAt: options.expiresAt,
+          isOneTime: options.isOneTime,
         };
 
         const result = await apiFetch('/api/v1/shorten', {
@@ -394,6 +401,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
           longUrl: result.longUrl,
           customAlias: null,
           isActive: true,
+          isOneTime: result.isOneTime || false,
           password: result.passwordEnabled ? '' : null,
           expiresAt: result.expiresAt ?? null,
           createdAt: Date.now(),
