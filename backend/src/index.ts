@@ -62,7 +62,10 @@ app.get('/:code', async (c) => {
         .where(
           and(
             eq(schema.links.isActive, true),
-            sql`${schema.links.shortCode} = ${code} OR ${schema.links.customAlias} = ${code}`
+            or(
+              eq(schema.links.shortCode, code),
+              eq(schema.links.customAlias, code)
+            )
           )
         )
         .limit(1);
