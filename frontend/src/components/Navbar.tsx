@@ -50,7 +50,7 @@ export default function Navbar() {
           <div className="flex h-10 sm:h-12 items-center justify-between gap-3">
             <Link href="/" className={`flex items-center space-x-3 group shrink-0 ${user ? 'hidden md:flex' : 'flex'}`}>
               <img src="/logo.svg" alt="SnipURL" width="32" height="32" className="transition-transform duration-300 group-hover:scale-110" />
-              <span className={`font-brand text-lg sm:text-xl tracking-widest ${user ? 'hidden' : 'inline'}`}>
+              <span className={`font-brand text-lg sm:text-xl tracking-widest ${user ? 'hidden md:inline' : 'inline'}`}>
                 <span className="text-ghost-white">SNIP</span><span className="text-ecto-green">URL</span>
               </span>
             </Link>
@@ -102,14 +102,14 @@ export default function Navbar() {
               )}
             </div>
 
-            <div className="md:hidden flex min-w-0 items-center justify-end gap-2 overflow-x-auto whitespace-nowrap">
+            <div className="md:hidden flex min-w-0 items-center justify-start gap-1.5 whitespace-nowrap">
               {user ? (
                 <>
                   {links.map(link => (
                     <Link
                       key={link.name}
                       href={link.href}
-                      className={`rounded-full px-2.5 py-1.5 text-[9px] font-mono tracking-[0.14em] uppercase transition-colors border shrink-0 ${
+                      className={`rounded-full px-2 py-1.5 text-[8px] font-mono tracking-[0.13em] uppercase transition-colors border shrink-0 ${
                         pathname === link.href
                           ? 'text-ecto-green border-ecto-green/30 bg-ecto-green/5'
                           : 'text-ghost-white/60 border-glass-border hover:text-ghost-white hover:border-ghost-white/20'
@@ -125,7 +125,7 @@ export default function Navbar() {
                     {showDevMenu && (
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setShowDevMenu(false)} />
-                        <div className="absolute right-0 top-full mt-2 z-50 glass-strong border border-glass-border rounded-2xl p-3 flex gap-3">
+                        <div className="absolute right-0 top-full mt-2 z-50 glass-strong border border-glass-border rounded-2xl p-3 flex flex-row gap-3">
                           {devLinks.map(link => (
                             <a
                               key={link.label}
@@ -142,7 +142,7 @@ export default function Navbar() {
                       </>
                     )}
                   </div>
-                  <button onClick={() => setShowLogoutModal(true)} className="rounded-full px-3 py-1.5 text-[9px] font-mono tracking-[0.14em] uppercase text-red-400/70 border border-red-400/30 shrink-0">
+                  <button onClick={() => setShowLogoutModal(true)} className="rounded-full px-2.5 py-1.5 text-[8px] font-mono tracking-[0.13em] uppercase text-red-400/70 border border-red-400/30 shrink-0">
                     Logout
                   </button>
                 </>
@@ -155,7 +155,7 @@ export default function Navbar() {
                     {showDevMenu && (
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setShowDevMenu(false)} />
-                        <div className="absolute right-0 top-full mt-2 z-50 glass-strong border border-glass-border rounded-2xl p-3 flex gap-3">
+                        <div className="absolute right-0 top-full mt-2 z-50 glass-strong border border-glass-border rounded-2xl p-3 flex flex-row gap-3">
                           {devLinks.map(link => (
                             <a
                               key={link.label}
