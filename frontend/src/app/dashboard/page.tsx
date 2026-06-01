@@ -182,7 +182,7 @@ export default function DashboardPage() {
   if (!user) return null;
 
   return (
-    <div className="px-4 sm:px-10 lg:px-16 xl:px-24 py-8 sm:py-16 space-y-8">
+    <div className="px-4 sm:px-10 lg:px-16 xl:px-24 pt-14 sm:pt-20 pb-8 sm:pb-16 space-y-8">
       {/* HEADER */}
       <div className="text-center border-b border-glass-border pb-6">
         <h1 className="font-display text-2xl sm:text-3xl tracking-[0.05em] text-ghost-white">Link Vault</h1>
@@ -190,7 +190,7 @@ export default function DashboardPage() {
       </div>
 
       {/* SEARCH + TOTAL */}
-      <div className="flex items-center gap-3">
+      <div className="max-w-4xl mx-auto flex items-center gap-3">
         <div className="glass rounded-xl flex items-center px-4 flex-1">
           <Search className="h-4 w-4 text-ghost-white/30 shrink-0" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -212,7 +212,7 @@ export default function DashboardPage() {
 
       {/* LINK LIST */}
       {userLinks.length === 0 ? (
-        <div className="glass rounded-2xl p-16 text-center space-y-4">
+        <div className="max-w-4xl mx-auto glass rounded-2xl p-16 text-center space-y-4">
           <div className="font-mono text-4xl text-ecto-green/20">~</div>
           <h3 className="font-display text-sm tracking-[0.1em] text-ghost-white/60">No links found</h3>
           <p className="font-body text-xs text-ghost-white/30">Shorten a URL on the landing page to see it here.</p>
