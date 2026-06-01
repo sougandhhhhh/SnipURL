@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSnapStore } from '../context/store';
-import { Menu, X, Code2 } from 'lucide-react';
+import { Code2 } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useSnapStore();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDevMenu, setShowDevMenu] = useState(false);
@@ -31,7 +30,6 @@ export default function Navbar() {
   const handleLogout = () => {
     logout();
     setShowLogoutModal(false);
-    setMobileOpen(false);
   };
 
   const links = user
@@ -49,7 +47,7 @@ export default function Navbar() {
         <div className="absolute inset-0 pointer-events-none" style={{ willChange: 'opacity, backdrop-filter', transition: 'opacity 200ms, backdrop-filter 200ms, background 200ms, border-color 200ms', background: scrolled ? 'rgba(8, 8, 16, 0.7)' : 'transparent', backdropFilter: scrolled ? 'blur(32px)' : 'none', WebkitBackdropFilter: scrolled ? 'blur(32px)' : 'none', borderBottom: scrolled ? '1px solid rgba(232, 234, 246, 0.08)' : '1px solid transparent' }}
         />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
-          <div className="flex h-10 sm:h-12 items-center justify-between">
+          <div className="flex h-10 sm:h-12 items-center justify-between gap-3">
             <Link href="/" className="flex items-center space-x-3 group">
               <img src="/logo.svg" alt="SnipURL" width="32" height="32" className="transition-transform duration-300 group-hover:scale-110" />
               <span className="font-brand text-lg sm:text-xl tracking-widest">
@@ -103,47 +101,50 @@ export default function Navbar() {
                 </Link>
               )}
             </div>
+          </div>
 
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden text-ghost-white/70 hover:text-ghost-white transition-colors">
-              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+          <div className="md:hidden mt-3 glass-strong border border-glass-border rounded-2xl px-3 py-3">
+            {user ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {links.map(link => (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className={`rounded-full px-3 py-2 text-[10px] font-mono tracking-[0.15em] uppercase transition-colors border ${
+                      pathname === link.href
+                        ? 'text-ecto-green border-ecto-green/30 bg-ecto-green/5'
+                        : 'text-ghost-white/60 border-glass-border hover:text-ghost-white hover:border-ghost-white/20'
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+                <div className="flex-1" />
+                {user ? (
+                  <button onClick={() => setShowLogoutModal(true)} className="rounded-full px-3 py-2 text-[10px] font-mono tracking-[0.15em] uppercase text-red-400/70 border border-red-400/30">
+                    Logout
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href="/"
+                    className={`rounded-full px-3 py-2 text-[10px] font-mono tracking-[0.15em] uppercase transition-colors border ${
+                      pathname === '/' ? 'text-ecto-green border-ecto-green/30 bg-ecto-green/5' : 'text-ghost-white/60 border-glass-border hover:text-ghost-white hover:border-ghost-white/20'
+                    }`}
+                  >
+                    Home
+                  </Link>
+                </div>
+                <Link href="/login" className="btn-ghost text-[10px] py-2 px-4 whitespace-nowrap">
+                  Sign In
+                </Link>
+              </div>
+            )}
           </div>
         </div>
-
-        {mobileOpen && (
-          <div className="md:hidden glass-strong border-t border-glass-border mt-3 px-4 py-4 space-y-2">
-            {links.map(link => (
-              <Link
-                key={link.name}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className={`block px-3 py-2 text-xs font-mono tracking-[0.15em] uppercase ${
-                  pathname === link.href ? 'text-ecto-green' : 'text-ghost-white/60'
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
-            <div className="flex flex-col gap-2 border-t border-glass-border pt-3 mt-3">
-              <div className="flex items-center gap-3">
-                {devLinks.map(link => (
-                  <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer" className="text-ghost-white/40 hover:text-ghost-white transition-colors" title={link.label}>
-                    {link.icon}
-                  </a>
-                ))}
-              </div>
-              {user ? (
-                <button onClick={() => setShowLogoutModal(true)} className="w-full text-center text-[10px] font-mono tracking-[0.15em] uppercase text-red-400/70 border border-red-400/30 rounded-full py-2">
-                  Logout
-                </button>
-              ) : (
-                <Link href="/login" onClick={() => setMobileOpen(false)} className="block text-center btn-ghost text-[10px] py-2 justify-center">
-                  Sign In / Sign Up
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
       </nav>
 
       {showLogoutModal && (

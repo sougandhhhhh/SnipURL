@@ -218,7 +218,7 @@ export default function DashboardPage() {
           <p className="font-body text-xs text-ghost-white/30">Shorten a URL on the landing page to see it here.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="max-w-4xl mx-auto space-y-3">
           {displayItems.map(item => {
             if (item.type === 'batch') {
               const expanded = expandedBatches.has(item.batchId);
