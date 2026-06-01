@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSnapStore } from '../context/store';
-import { ExternalLink, Copy, Check, AlertTriangle, Lock, Unlock } from 'lucide-react';
+import { ExternalLink, Copy, Check, AlertTriangle, Lock, Unlock, ClipboardPaste } from 'lucide-react';
 
 export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) {
   const { expandUrl, unlockUrl } = useSnapStore();
@@ -63,11 +63,17 @@ export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) 
   return (
     <div className="space-y-4">
       <form onSubmit={handleExpand} className="space-y-4">
-        <input
-          type="text" required value={input} onChange={e => setInput(e.target.value)}
-          placeholder="Paste short URL or code (e.g. https://url6.vercel.app/abc123 or abc123)"
-          className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
-        />
+        <div className="relative">
+          <input
+            type="text" required value={input} onChange={e => setInput(e.target.value)}
+            placeholder="Paste short URL or code (e.g. https://url6.vercel.app/abc123 or abc123)"
+            className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border pl-4 pr-10 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+          />
+          <button type="button" onClick={async () => { try { const text = await navigator.clipboard.readText(); setInput(text); } catch {} }}
+            className="absolute right-0 top-0 h-full w-10 flex items-center justify-center text-ghost-white/30 hover:text-ecto-green transition-colors" title="Paste from clipboard">
+            <ClipboardPaste className="h-3.5 w-3.5" />
+          </button>
+        </div>
         <button type="submit" disabled={loading} className="btn-ghost w-full justify-center text-[10px]">
           {loading ? 'Resolving...' : 'Expand'} <ExternalLink className="h-3 w-3" />
         </button>

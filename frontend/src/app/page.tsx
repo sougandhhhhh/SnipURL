@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useSnapStore } from '../context/store';
 import ExpandForm from '../components/ExpandForm';
-import { ArrowRight, Copy, Check, Scissors, ExternalLink } from 'lucide-react';
+import { ArrowRight, Copy, Check, Scissors, ExternalLink, ClipboardPaste } from 'lucide-react';
 
 function GhostBurst() {
   const [go, setGo] = useState(false);
@@ -202,14 +202,20 @@ export default function LandingPage() {
           {mode === 'shorten' ? (
             <form onSubmit={handleShorten} className="space-y-5">
               <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="url"
-                  required
-                  value={longUrl}
-                  onChange={e => setLongUrl(e.target.value)}
-                  placeholder="Paste a long URL..."
-                  className="flex-1 h-14 rounded-full bg-white/[0.04] border border-glass-border px-6 text-base text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
-                />
+                <div className="flex-1 relative">
+                  <input
+                    type="url"
+                    required
+                    value={longUrl}
+                    onChange={e => setLongUrl(e.target.value)}
+                    placeholder="Paste a long URL..."
+                    className="w-full h-14 rounded-full bg-white/[0.04] border border-glass-border pl-6 pr-12 text-base text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+                  />
+                  <button type="button" onClick={async () => { try { const text = await navigator.clipboard.readText(); setLongUrl(text); } catch {} }}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-12 w-12 flex items-center justify-center text-ghost-white/30 hover:text-ecto-green transition-colors" title="Paste from clipboard">
+                    <ClipboardPaste className="h-4 w-4" />
+                  </button>
+                </div>
                 <button
                   type="submit"
                   disabled={loading}
