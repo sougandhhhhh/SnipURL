@@ -1,18 +1,26 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSnapStore } from '../../context/store';
-import { Upload, Check, AlertTriangle, Download, ArrowLeft } from 'lucide-react';
+import { Upload, Check, AlertTriangle, Download, ArrowLeft, Pencil } from 'lucide-react';
 
 export default function BulkPage() {
   const router = useRouter();
-  const { user, apiFetch, fetchLinks } = useSnapStore();
+  const { user, apiFetch, fetchLinks, links } = useSnapStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [results, setResults] = useState<{ url: string; shortUrl?: string; error?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+  const [batchName, setBatchName] = useState('');
+
+  const nextBatchNum = useMemo(() => {
+    const existingBatches = new Set(links.filter(l => l.batchId).map(l => l.batchId));
+    return existingBatches.size + 1;
+  }, [links]);
+
+  const defaultBatchName = useMemo(() => `Batch ${nextBatchNum}`, [nextBatchNum]);
 
   if (user === null) {
     return (
@@ -46,7 +54,7 @@ export default function BulkPage() {
     try {
       const response = await apiFetch('/api/v1/shorten/bulk', {
         method: 'POST',
-        body: JSON.stringify({ urls }),
+        body: JSON.stringify({ urls, batchName: batchName.trim() || defaultBatchName }),
       });
 
       const out = Array.isArray(response.results)
@@ -80,7 +88,7 @@ export default function BulkPage() {
     if (!file || !file.name.endsWith('.csv')) { setError('Please drop a .csv file.'); return; }
     const text = await file.text();
     await processUrls(parseCSV(text));
-  }, []);
+  }, [batchName, defaultBatchName]);
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = () => setIsDragging(false);
@@ -112,6 +120,14 @@ export default function BulkPage() {
         </div>
 
         <div className="glass-strong rounded-3xl p-8 space-y-6">
+          <div className="flex items-center gap-3">
+            <Pencil className="h-4 w-4 text-ecto-green/60 shrink-0" />
+            <input type="text" value={batchName} onChange={e => setBatchName(e.target.value)}
+              placeholder={defaultBatchName}
+              className="flex-1 h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-sm text-ghost-white placeholder-ghost-white/30 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
+            <span className="font-mono text-[9px] text-ghost-white/30 whitespace-nowrap">Name this batch</span>
+          </div>
+
           <div
             onDrop={handleDrop}
             onDragOver={handleDragOver}

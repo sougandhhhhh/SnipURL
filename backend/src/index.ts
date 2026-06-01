@@ -331,6 +331,7 @@ app.post('/api/v1/shorten/bulk', authenticateApiKey, async (c) => {
     const results: { url: string; shortCode: string; shortUrl: string; error?: string }[] = [];
     const displayDomain = (c.env.FRONTEND_URL || '').replace(/\/+$/, '').trim() || c.req.url.replace('/api/v1/shorten/bulk', '');
     const batchId = crypto.randomUUID();
+    const batchName = body.batchName || null;
 
     // Seed sequential counter from current link count
     const [countRow] = await db
@@ -373,6 +374,7 @@ app.post('/api/v1/shorten/bulk', authenticateApiKey, async (c) => {
         isActive: true,
         isOneTime: false,
         batchId,
+        batchName,
         password: null,
         expiresAt: null,
         createdAt: Date.now(),
@@ -414,6 +416,7 @@ app.get('/api/v1/links', authenticateApiKey, async (c) => {
         customAlias: schema.links.customAlias,
         isActive: schema.links.isActive,
         batchId: schema.links.batchId,
+        batchName: schema.links.batchName,
         createdAt: schema.links.createdAt,
         expiresAt: schema.links.expiresAt,
         passwordEnabled: sql`CASE WHEN ${schema.links.password} IS NOT NULL THEN 1 ELSE 0 END`,
@@ -431,7 +434,8 @@ app.get('/api/v1/links', authenticateApiKey, async (c) => {
         schema.links.createdAt,
         schema.links.expiresAt,
         schema.links.password,
-        schema.links.batchId
+        schema.links.batchId,
+        schema.links.batchName
       )
       .orderBy(desc(schema.links.createdAt));
 

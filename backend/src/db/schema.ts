@@ -18,6 +18,7 @@ export const links = sqliteTable('links', {
   isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
   isOneTime: integer('is_one_time', { mode: 'boolean' }).default(false).notNull(),
   batchId: text('batch_id'),
+  batchName: text('batch_name'),
   password: text('password'),
   expiresAt: integer('expires_at'),
   createdAt: integer('created_at').notNull(),

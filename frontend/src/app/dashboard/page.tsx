@@ -231,7 +231,7 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-4">
                       <Layers className="h-5 w-5 lg:h-6 lg:w-6 text-ecto-green/60" />
                       <div>
-                        <span className="font-mono text-sm text-ghost-white">Batch</span>
+                        <span className="font-mono text-sm text-ghost-white">{item.links[0].batchName || 'Batch'}</span>
                         <span className="font-body text-xs text-ghost-white/40 ml-3">{item.links.length} links</span>
                       </div>
                     </div>

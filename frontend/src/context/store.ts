@@ -12,6 +12,7 @@ export interface Link {
   isActive: boolean;
   isOneTime: boolean;
   batchId?: string | null;
+  batchName?: string | null;
   password?: string | null;
   expiresAt: number | null;
   createdAt: number;
