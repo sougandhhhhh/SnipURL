@@ -291,6 +291,16 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     return response.json();
   };
 
+  const parseResponseBody = async (response: Response) => {
+    const text = await response.text();
+    if (!text) return {};
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { error: text.slice(0, 200).trim() || response.statusText };
+    }
+  };
+
   // Build Store State
   const initialLinks = getLocalStorage<Link[]>('snap-links', initialMockLinks);
   const initialClicks = getLocalStorage<ClickLog[]>('snap-clicks', mockSeedClicks);
@@ -485,21 +495,35 @@ export const useSnapStore = create<SnapStore>((set, get) => {
 
     expandExternalUrl: async (url) => {
       const normalizedUrl = normalizeExternalUrl(url);
-      const baseUrl = (process.env.NEXT_PUBLIC_API_URL ?? '').trim();
-      const endpoint = `${baseUrl}/api/v1/external/resolve`;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       const apiKey = getApiKeyHeader();
       if (apiKey) headers['x-api-key'] = apiKey;
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ url: normalizedUrl }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || response.statusText);
+
+      const endpoints = [
+        '/api/external/resolve',
+        `${(process.env.NEXT_PUBLIC_API_URL ?? '').trim()}/api/v1/external/resolve`,
+      ].filter(Boolean);
+
+      let lastError = '';
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ url: normalizedUrl }),
+          });
+          const data = await parseResponseBody(response);
+          if (!response.ok) {
+            lastError = data.error || response.statusText || 'Failed to resolve external link';
+            continue;
+          }
+          return data;
+        } catch (err: any) {
+          lastError = err?.message || 'Failed to resolve external link';
+        }
       }
-      return data;
+
+      throw new Error(lastError || 'Failed to resolve external link');
     },
 
     unlockUrl: async (code, password) => {
