@@ -212,8 +212,8 @@ export default function LandingPage() {
                     className="w-full h-14 rounded-full bg-white/[0.04] border border-glass-border pl-6 pr-12 text-base text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
                   />
                   <button type="button" onClick={async () => { try { const text = await navigator.clipboard.readText(); setLongUrl(text); } catch {} }}
-                    className="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-ghost-white/30 hover:text-ecto-green transition-colors" title="Paste from clipboard">
-                    <ClipboardPaste className="h-4 w-4" />
+                    className="absolute right-0 top-0 h-full w-10 flex items-center justify-center text-ghost-white/30 hover:text-ecto-green transition-colors" title="Paste from clipboard">
+                    <ClipboardPaste className="h-3.5 w-3.5" />
                   </button>
                 </div>
                 <button
