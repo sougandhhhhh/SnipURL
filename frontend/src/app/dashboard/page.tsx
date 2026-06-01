@@ -184,25 +184,23 @@ export default function DashboardPage() {
   return (
     <div className="px-4 sm:px-10 lg:px-16 xl:px-24 py-8 sm:py-16 space-y-8">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-glass-border pb-6 gap-4">
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl tracking-[0.05em] text-ghost-white">Link Vault</h1>
-          <p className="font-body text-sm text-ghost-white/40">All your summoned URLs.</p>
-        </div>
-        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.1em]">
-          <span className="glass rounded-full px-3 py-1.5 text-ecto-green/70">
-            Total: {links.length}
-          </span>
-        </div>
+      <div className="text-center border-b border-glass-border pb-6">
+        <h1 className="font-display text-2xl sm:text-3xl tracking-[0.05em] text-ghost-white">Link Vault</h1>
+        <p className="font-body text-sm text-ghost-white/40 mt-1">All your summoned URLs.</p>
       </div>
 
-      {/* SEARCH */}
-      <div className="glass rounded-xl flex items-center px-4 max-w-2xl">
-        <Search className="h-4 w-4 text-ghost-white/30 shrink-0" />
-        <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search short codes or destinations..."
-          className="h-11 w-full bg-transparent px-3 text-xs text-ghost-white placeholder-ghost-white/20 outline-none font-body" />
-        {search && <button onClick={() => setSearch('')} className="text-ghost-white/30 hover:text-ghost-white"><X className="h-4 w-4" /></button>}
+      {/* SEARCH + TOTAL */}
+      <div className="flex items-center gap-3">
+        <div className="glass rounded-xl flex items-center px-4 flex-1">
+          <Search className="h-4 w-4 text-ghost-white/30 shrink-0" />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search short codes or destinations..."
+            className="h-11 w-full bg-transparent px-3 text-xs text-ghost-white placeholder-ghost-white/20 outline-none font-body" />
+          {search && <button onClick={() => setSearch('')} className="text-ghost-white/30 hover:text-ghost-white"><X className="h-4 w-4" /></button>}
+        </div>
+        <span className="glass rounded-full px-3 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-ecto-green/70 shrink-0">
+          Total: {links.length}
+        </span>
       </div>
 
       {/* TOAST MESSAGE */}
