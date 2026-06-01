@@ -112,6 +112,18 @@ export default function DashboardPage() {
     setMessage('Link updated');
   };
 
+  const downloadBatchCSV = (links: LinkType[], batchName: string) => {
+    const header = 'Original URL,Short URL,Created\n';
+    const rows = links.map(l => `"${l.longUrl}","${origin}/${l.shortCode}","${new Date(l.createdAt).toISOString()}"`).join('\n');
+    const blob = new Blob([header + rows], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${batchName.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleDownloadQr = async () => {
     if (!activeQrLink) return;
     try {
@@ -234,6 +246,10 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      <button onClick={(e) => { e.stopPropagation(); downloadBatchCSV(item.links, item.links[0].batchName || 'Batch'); }}
+                        className="rounded-lg bg-white/[0.04] p-2 text-ghost-white/40 hover:text-ecto-green border border-glass-border transition-colors" title="Download CSV">
+                        <Download className="h-3.5 w-3.5" />
+                      </button>
                       <span className="font-mono text-[9px] text-ghost-white/20">
                         {new Date(item.links[0].createdAt).toLocaleDateString()}
                       </span>

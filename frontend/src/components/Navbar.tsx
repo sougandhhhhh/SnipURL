@@ -48,9 +48,9 @@ export default function Navbar() {
         />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
           <div className="flex h-10 sm:h-12 items-center justify-between gap-3">
-            <Link href="/" className="flex items-center space-x-3 group">
+            <Link href="/" className="flex items-center space-x-3 group shrink-0">
               <img src="/logo.svg" alt="SnipURL" width="32" height="32" className="transition-transform duration-300 group-hover:scale-110" />
-              <span className="font-brand text-lg sm:text-xl tracking-widest">
+              <span className={`font-brand text-lg sm:text-xl tracking-widest ${user ? 'hidden sm:inline' : 'inline'}`}>
                 <span className="text-ghost-white">SNIP</span><span className="text-ecto-green">URL</span>
               </span>
             </Link>
@@ -101,48 +101,83 @@ export default function Navbar() {
                 </Link>
               )}
             </div>
-          </div>
 
-          <div className="md:hidden mt-3 glass-strong border border-glass-border rounded-2xl px-3 py-3">
-            {user ? (
-              <div className="flex flex-wrap items-center gap-2">
-                {links.map(link => (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className={`rounded-full px-3 py-2 text-[10px] font-mono tracking-[0.15em] uppercase transition-colors border ${
-                      pathname === link.href
-                        ? 'text-ecto-green border-ecto-green/30 bg-ecto-green/5'
-                        : 'text-ghost-white/60 border-glass-border hover:text-ghost-white hover:border-ghost-white/20'
-                    }`}
-                  >
-                    {link.name}
-                  </Link>
-                ))}
-                <div className="flex-1" />
-                {user ? (
-                  <button onClick={() => setShowLogoutModal(true)} className="rounded-full px-3 py-2 text-[10px] font-mono tracking-[0.15em] uppercase text-red-400/70 border border-red-400/30">
+            <div className="md:hidden flex min-w-0 items-center justify-end gap-2 overflow-x-auto whitespace-nowrap">
+              {user ? (
+                <>
+                  {links.map(link => (
+                    <Link
+                      key={link.name}
+                      href={link.href}
+                      className={`rounded-full px-2.5 py-1.5 text-[9px] font-mono tracking-[0.14em] uppercase transition-colors border shrink-0 ${
+                        pathname === link.href
+                          ? 'text-ecto-green border-ecto-green/30 bg-ecto-green/5'
+                          : 'text-ghost-white/60 border-glass-border hover:text-ghost-white hover:border-ghost-white/20'
+                      }`}
+                    >
+                      {link.name}
+                    </Link>
+                  ))}
+                  <div className="relative shrink-0">
+                    <button onClick={() => setShowDevMenu(!showDevMenu)} className="rounded-full border border-glass-border p-2 text-ghost-white/40 hover:text-ghost-white transition-colors">
+                      <Code2 className="h-4 w-4" />
+                    </button>
+                    {showDevMenu && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowDevMenu(false)} />
+                        <div className="absolute right-0 top-full mt-2 z-50 glass-strong border border-glass-border rounded-2xl p-3 flex gap-3">
+                          {devLinks.map(link => (
+                            <a
+                              key={link.label}
+                              href={link.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-ghost-white/40 hover:text-ghost-white transition-colors"
+                              title={link.label}
+                            >
+                              {link.icon}
+                            </a>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <button onClick={() => setShowLogoutModal(true)} className="rounded-full px-3 py-1.5 text-[9px] font-mono tracking-[0.14em] uppercase text-red-400/70 border border-red-400/30 shrink-0">
                     Logout
                   </button>
-                ) : null}
-              </div>
-            ) : (
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    href="/"
-                    className={`rounded-full px-3 py-2 text-[10px] font-mono tracking-[0.15em] uppercase transition-colors border ${
-                      pathname === '/' ? 'text-ecto-green border-ecto-green/30 bg-ecto-green/5' : 'text-ghost-white/60 border-glass-border hover:text-ghost-white hover:border-ghost-white/20'
-                    }`}
-                  >
-                    Home
+                </>
+              ) : (
+                <>
+                  <div className="relative shrink-0">
+                    <button onClick={() => setShowDevMenu(!showDevMenu)} className="rounded-full border border-glass-border p-2 text-ghost-white/40 hover:text-ghost-white transition-colors">
+                      <Code2 className="h-4 w-4" />
+                    </button>
+                    {showDevMenu && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowDevMenu(false)} />
+                        <div className="absolute right-0 top-full mt-2 z-50 glass-strong border border-glass-border rounded-2xl p-3 flex gap-3">
+                          {devLinks.map(link => (
+                            <a
+                              key={link.label}
+                              href={link.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-ghost-white/40 hover:text-ghost-white transition-colors"
+                              title={link.label}
+                            >
+                              {link.icon}
+                            </a>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <Link href="/login" className="btn-ghost text-[10px] py-2 px-4 shrink-0">
+                    Sign In / Sign Up
                   </Link>
-                </div>
-                <Link href="/login" className="btn-ghost text-[10px] py-2 px-4 whitespace-nowrap">
-                  Sign In
-                </Link>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </nav>
