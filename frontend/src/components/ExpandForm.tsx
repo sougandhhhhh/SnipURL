@@ -2,20 +2,25 @@
 
 import { useState } from 'react';
 import { useSnapStore } from '../context/store';
-import { ExternalLink, Copy, Check, AlertTriangle, Clock, Lock } from 'lucide-react';
+import { ExternalLink, Copy, Check, AlertTriangle, Lock, Unlock } from 'lucide-react';
 
 export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) {
-  const { expandUrl } = useSnapStore();
+  const { expandUrl, unlockUrl } = useSnapStore();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ longUrl?: string; passwordProtected?: boolean; shortCode?: string; error?: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const handleExpand = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
     setLoading(true);
     setResult(null);
+    setPassword('');
+    setPasswordError('');
     try {
       const data = await expandUrl(input.trim());
       if ('passwordProtected' in data && data.passwordProtected) {
@@ -27,6 +32,23 @@ export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) 
       setResult({ error: err.message || 'Failed to resolve link' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password.trim() || !result?.shortCode) return;
+    setPasswordLoading(true);
+    setPasswordError('');
+    try {
+      const data = await unlockUrl(result.shortCode, password);
+      if (data.longUrl) {
+        setResult({ longUrl: data.longUrl });
+      }
+    } catch (err: any) {
+      setPasswordError(err.message || 'Incorrect password');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -81,16 +103,36 @@ export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) 
             </>
           )}
 
-          {result.passwordProtected && (
-            <div className="flex items-start gap-3">
-              <Lock className="h-4 w-4 text-yellow-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-mono text-xs text-yellow-400">Password Protected</p>
-                <p className="font-body text-[10px] text-ghost-white/40 mt-1">
-                  This short link requires a password. Visit it in your browser to unlock.
-                </p>
+          {result.passwordProtected && !result.longUrl && (
+            <form onSubmit={handlePasswordSubmit} className="space-y-3">
+              <div className="flex items-start gap-3">
+                <Lock className="h-4 w-4 text-yellow-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-mono text-xs text-yellow-400">Password Protected</p>
+                  <p className="font-body text-[10px] text-ghost-white/40 mt-1">
+                    Enter the password to expand this link.
+                  </p>
+                </div>
               </div>
-            </div>
+              <div className="flex gap-2">
+                <input
+                  type="password" required value={password} onChange={e => { setPassword(e.target.value); setPasswordError(''); }}
+                  placeholder="Enter password"
+                  className="flex-1 h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+                  autoFocus
+                />
+                <button type="submit" disabled={passwordLoading}
+                  className="btn-ghost shrink-0 h-10 px-4 text-[10px]">
+                  {passwordLoading ? 'Unlocking...' : 'Unlock'} <Unlock className="h-3 w-3" />
+                </button>
+              </div>
+              {passwordError && (
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-3 w-3 text-red-400 shrink-0 mt-0.5" />
+                  <p className="font-mono text-[10px] text-red-400">{passwordError}</p>
+                </div>
+              )}
+            </form>
           )}
         </div>
       )}

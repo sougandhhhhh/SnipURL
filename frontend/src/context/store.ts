@@ -69,6 +69,7 @@ interface SnapStore {
   // Link Operations
   shortenUrl: (longUrl: string, options?: { customAlias?: string; password?: string; expiresAt?: number; isOneTime?: boolean }) => Promise<Link>;
   expandUrl: (code: string) => Promise<{ longUrl: string } | { passwordProtected: boolean; shortCode: string }>;
+  unlockUrl: (code: string, password: string) => Promise<{ longUrl: string }>;
   updateLink: (id: string, updates: Partial<Pick<Link, 'longUrl' | 'isActive' | 'password' | 'expiresAt'>>) => Promise<boolean>;
   deleteLink: (id: string) => Promise<boolean>;
   toggleLinkActive: (id: string) => Promise<boolean>;
@@ -443,7 +444,37 @@ export const useSnapStore = create<SnapStore>((set, get) => {
 
     expandUrl: async (code) => {
       const cleanCode = code.replace(/^https?:\/\/[^\/]+\//, '').replace(/^\/+/, '').replace(/\/+$/, '');
-      return apiFetch(`/api/v1/resolve/${encodeURIComponent(cleanCode)}`);
+      const baseUrl = (process.env.NEXT_PUBLIC_API_URL ?? '').trim();
+      const url = `${baseUrl}/api/v1/resolve/${encodeURIComponent(cleanCode)}`;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const apiKey = getApiKeyHeader();
+      if (apiKey) headers['x-api-key'] = apiKey;
+      const response = await fetch(url, { headers });
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.passwordProtected) return data;
+        throw new Error(data.error || response.statusText);
+      }
+      return data;
+    },
+
+    unlockUrl: async (code, password) => {
+      const cleanCode = code.replace(/^https?:\/\/[^\/]+\//, '').replace(/^\/+/, '').replace(/\/+$/, '');
+      const baseUrl = (process.env.NEXT_PUBLIC_API_URL ?? '').trim();
+      const url = `${baseUrl}/api/v1/resolve/${encodeURIComponent(cleanCode)}`;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const apiKey = getApiKeyHeader();
+      if (apiKey) headers['x-api-key'] = apiKey;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ password }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to unlock');
+      }
+      return data;
     },
 
     updateLink: async (id, updates) => {
