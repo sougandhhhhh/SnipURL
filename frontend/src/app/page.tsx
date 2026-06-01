@@ -209,11 +209,16 @@ export default function LandingPage() {
                     value={longUrl}
                     onChange={e => setLongUrl(e.target.value)}
                     placeholder="Paste a long URL..."
-                    className="w-full h-14 rounded-full bg-white/[0.04] border border-glass-border pl-6 pr-12 text-base text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+                    className="w-full h-14 rounded-full bg-white/[0.04] border border-glass-border pl-6 pr-24 text-base text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
                   />
-                  <button type="button" onClick={async () => { try { const text = await navigator.clipboard.readText(); setLongUrl(text); } catch {} }}
-                    className="absolute right-0 top-0 h-full w-10 flex items-center justify-center text-ghost-white/30 hover:text-ecto-green transition-colors" title="Paste from clipboard">
+                  <button
+                    type="button"
+                    onClick={async () => { try { const text = await navigator.clipboard.readText(); setLongUrl(text); } catch {} }}
+                    className="absolute right-1 top-1 flex h-12 items-center gap-1.5 rounded-full border border-[#22305c] bg-[#111a37] px-4 text-[10px] font-semibold text-[#8eb2ff] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-colors hover:border-[#2d3e77] hover:bg-[#142044] hover:text-[#a7c1ff]"
+                    title="Paste from clipboard"
+                  >
                     <ClipboardPaste className="h-3.5 w-3.5" />
+                    Paste
                   </button>
                 </div>
                 <button

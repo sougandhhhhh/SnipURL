@@ -8,11 +8,37 @@ export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) 
   const { expandUrl, unlockUrl } = useSnapStore();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ longUrl?: string; passwordProtected?: boolean; shortCode?: string; error?: string } | null>(null);
+  const [result, setResult] = useState<{ longUrl?: string; passwordProtected?: boolean; shortCode?: string; error?: string; externalUrl?: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+
+  const parseUrl = (value: string) => {
+    const raw = value.trim();
+    if (!raw) return null;
+    try {
+      return new URL(raw);
+    } catch {
+      try {
+        return new URL(`https://${raw}`);
+      } catch {
+        return null;
+      }
+    }
+  };
+
+  const isSnipUrlHost = (host: string) => {
+    const appHost = (() => {
+      try {
+        return new URL(baseOrigin || window.location.origin).host.toLowerCase();
+      } catch {
+        return window.location.host.toLowerCase();
+      }
+    })();
+    const normalizedHost = host.toLowerCase();
+    return normalizedHost === appHost || normalizedHost.endsWith(`.${appHost}`);
+  };
 
   const handleExpand = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +48,15 @@ export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) 
     setPassword('');
     setPasswordError('');
     try {
+      const parsed = parseUrl(input);
+      if (parsed && !isSnipUrlHost(parsed.host)) {
+        setResult({
+          error: 'External short link detected. Open the provider\'s official unlock page to enter the password.',
+          externalUrl: parsed.href,
+        });
+        return;
+      }
+
       const data = await expandUrl(input.trim());
       if ('passwordProtected' in data && data.passwordProtected) {
         setResult({ passwordProtected: true, shortCode: data.shortCode });
@@ -91,7 +126,18 @@ export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) 
               <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
               <div>
                 <p className="font-mono text-xs text-red-400">{result.error}</p>
-                <p className="font-body text-[10px] text-ghost-white/40 mt-1">Check the code and try again.</p>
+                <p className="font-body text-[10px] text-ghost-white/40 mt-1">
+                  {result.externalUrl ? (
+                    <>
+                      Open the provider's official unlock page for this link:
+                      <a href={result.externalUrl} target="_blank" rel="noreferrer" className="text-ecto-green underline underline-offset-2 ml-1">
+                        {result.externalUrl}
+                      </a>
+                    </>
+                  ) : (
+                    'Check the code and try again.'
+                  )}
+                </p>
               </div>
             </div>
           )}
