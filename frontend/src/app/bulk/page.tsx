@@ -7,7 +7,7 @@ import { Upload, Check, AlertTriangle, Download, ArrowLeft } from 'lucide-react'
 
 export default function BulkPage() {
   const router = useRouter();
-  const { user, shortenUrl } = useSnapStore();
+  const { user, apiFetch, fetchLinks } = useSnapStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [results, setResults] = useState<{ url: string; shortUrl?: string; error?: string }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -43,17 +43,27 @@ export default function BulkPage() {
     if (urls.length === 0) { setError('No valid URLs found in file.'); return; }
     if (urls.length > 100) { setError('Maximum 100 URLs per batch.'); return; }
     setLoading(true);
-    const out: { url: string; shortUrl?: string; error?: string }[] = [];
-    for (const url of urls) {
-      try {
-        const link = await shortenUrl(url);
-        out.push({ url, shortUrl: `${window.location.origin}/${link.shortCode}` });
-      } catch (err: any) {
-        out.push({ url, error: err.message || 'Failed' });
-      }
+    try {
+      const response = await apiFetch('/api/v1/shorten/bulk', {
+        method: 'POST',
+        body: JSON.stringify({ urls }),
+      });
+
+      const out = Array.isArray(response.results)
+        ? response.results.map((item: any) => ({
+            url: item.url,
+            shortUrl: item.shortUrl,
+            error: item.error,
+          }))
+        : [];
+
+      setResults(out);
+      await fetchLinks();
+    } catch (err: any) {
+      setError(err.message || 'Bulk shortening failed.');
+    } finally {
+      setLoading(false);
     }
-    setResults(out);
-    setLoading(false);
   };
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {

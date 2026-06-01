@@ -887,6 +887,32 @@ app.post('/api/v1/resolve/:code', async (c) => {
     if (password !== linkData.password) return c.json({ error: 'Incorrect password' }, 403);
   }
 
+  if (linkData.isOneTime) {
+    const db = drizzle(c.env.DB, { schema });
+    try {
+      const [row] = await db
+        .select({ id: schema.links.id, shortCode: schema.links.shortCode, customAlias: schema.links.customAlias })
+        .from(schema.links)
+        .where(
+          or(
+            eq(schema.links.shortCode, code),
+            eq(schema.links.customAlias, code)
+          )
+        )
+        .limit(1);
+
+      if (row) {
+        await db.update(schema.links)
+          .set({ isActive: false, updatedAt: Date.now() })
+          .where(eq(schema.links.id, row.id));
+      }
+
+      try { if (c.env.KV) await c.env.KV.delete(`code:${code}`); } catch {}
+    } catch (err) {
+      console.error('Failed to deactivate one-time link after unlock:', err);
+    }
+  }
+
   return c.json({ longUrl: linkData.longUrl });
 });
 
