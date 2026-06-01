@@ -11,13 +11,27 @@ export default function CodeRedirect() {
     if (!code) return;
     const api = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '').trim();
     fetch(`${api}/api/v1/resolve/${code}`)
-      .then(r => r.json())
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        return { ok: r.ok, data };
+      })
       .then(data => {
-        if (data.longUrl) {
-          window.location.href = data.longUrl;
-        } else {
-          window.location.href = '/404';
+        if (data.data?.longUrl) {
+          window.location.href = data.data.longUrl;
+          return;
         }
+
+        if (data.data?.passwordProtected && data.data.shortCode) {
+          window.location.href = `/p/${encodeURIComponent(data.data.shortCode)}`;
+          return;
+        }
+
+        if (data.ok) {
+          window.location.href = '/404';
+          return;
+        }
+
+        window.location.href = data.data?.error === 'Expired' ? `/expired?code=${encodeURIComponent(code)}` : '/404';
       })
       .catch(() => { window.location.href = '/404'; });
   }, [code]);
