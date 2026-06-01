@@ -48,9 +48,9 @@ export default function Navbar() {
         />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
           <div className="flex h-10 sm:h-12 items-center justify-between gap-3">
-            <Link href="/" className="flex items-center space-x-3 group shrink-0">
+            <Link href="/" className={`flex items-center space-x-3 group shrink-0 ${user ? 'hidden md:flex' : 'flex'}`}>
               <img src="/logo.svg" alt="SnipURL" width="32" height="32" className="transition-transform duration-300 group-hover:scale-110" />
-              <span className={`font-brand text-lg sm:text-xl tracking-widest ${user ? 'hidden sm:inline' : 'inline'}`}>
+              <span className={`font-brand text-lg sm:text-xl tracking-widest ${user ? 'hidden' : 'inline'}`}>
                 <span className="text-ghost-white">SNIP</span><span className="text-ecto-green">URL</span>
               </span>
             </Link>
