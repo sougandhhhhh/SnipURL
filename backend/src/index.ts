@@ -838,10 +838,12 @@ app.get('/api/v1/resolve/:code', async (c) => {
       if (rows.length > 0) {
         const row = rows[0];
         linkData = {
+          id: row.id,
           longUrl: row.longUrl,
           password: row.password,
           expiresAt: row.expiresAt,
           isActive: row.isActive,
+          isOneTime: row.isOneTime || false,
         };
       }
     } catch {}
@@ -857,6 +859,19 @@ app.get('/api/v1/resolve/:code', async (c) => {
 
   if (linkData.password) {
     return c.json({ passwordProtected: true, shortCode: code });
+  }
+
+  // Deactivate one-time links after successful resolve
+  if (linkData.isOneTime) {
+    try {
+      const db = drizzle(c.env.DB, { schema });
+      await db.update(schema.links)
+        .set({ isActive: false, updatedAt: Date.now() })
+        .where(eq(schema.links.id, linkData.id));
+      try { if (c.env.KV) await c.env.KV.delete(`code:${code}`); } catch {}
+    } catch (err) {
+      console.error('Failed to deactivate one-time link:', err);
+    }
   }
 
   return c.json({ longUrl: linkData.longUrl });
