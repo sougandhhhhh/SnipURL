@@ -67,11 +67,16 @@ export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) 
           <input
             type="text" required value={input} onChange={e => setInput(e.target.value)}
             placeholder="Paste short URL or code (e.g. https://url6.vercel.app/abc123 or abc123)"
-            className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border pl-4 pr-10 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
+            className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border pl-4 pr-24 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body"
           />
-          <button type="button" onClick={async () => { try { const text = await navigator.clipboard.readText(); setInput(text); } catch {} }}
-            className="absolute right-0 top-0 h-full w-10 flex items-center justify-center text-ghost-white/30 hover:text-ecto-green transition-colors" title="Paste from clipboard">
+          <button
+            type="button"
+            onClick={async () => { try { const text = await navigator.clipboard.readText(); setInput(text); } catch {} }}
+            className="absolute right-1 top-1 flex h-8 items-center gap-1.5 rounded-full border border-[#22305c] bg-[#111a37] px-3 text-[10px] font-semibold text-[#8eb2ff] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-colors hover:border-[#2d3e77] hover:bg-[#142044] hover:text-[#a7c1ff]"
+            title="Paste from clipboard"
+          >
             <ClipboardPaste className="h-3.5 w-3.5" />
+            Paste
           </button>
         </div>
         <button type="submit" disabled={loading} className="btn-ghost w-full justify-center text-[10px]">
