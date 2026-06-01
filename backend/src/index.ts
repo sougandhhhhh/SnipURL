@@ -856,7 +856,7 @@ app.get('/api/v1/resolve/:code', async (c) => {
   }
 
   if (linkData.password) {
-    return c.json({ passwordProtected: true, shortCode: code }, 403);
+    return c.json({ passwordProtected: true, shortCode: code });
   }
 
   return c.json({ longUrl: linkData.longUrl });
