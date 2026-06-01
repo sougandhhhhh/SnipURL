@@ -238,7 +238,8 @@ export const useSnapStore = create<SnapStore>((set, get) => {
   const normalizeShortCode = (input: string) => {
     const trimmed = input.trim();
     const withoutProtocol = trimmed.replace(/^https?:\/\/[^\/]+\/+/i, '').replace(/^\/+/, '');
-    const withoutPasswordRoute = withoutProtocol.replace(/^p\//i, '').replace(/^p\//i, '');
+    const withoutQuery = withoutProtocol.split(/[?#]/)[0];
+    const withoutPasswordRoute = withoutQuery.replace(/^p\//i, '');
     return withoutPasswordRoute.replace(/\/+$/, '');
   };
 
@@ -459,7 +460,9 @@ export const useSnapStore = create<SnapStore>((set, get) => {
       const response = await fetch(url, { headers });
       const data = await response.json();
       if (!response.ok) {
-        if (data.passwordProtected) return data;
+        if (data.passwordProtected || response.status === 401 || response.status === 403) {
+          return { passwordProtected: true, shortCode: data.shortCode || cleanCode };
+        }
         throw new Error(data.error || response.statusText);
       }
       return data;
