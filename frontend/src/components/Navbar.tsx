@@ -102,14 +102,14 @@ export default function Navbar() {
               )}
             </div>
 
-            <div className="md:hidden flex min-w-0 items-center justify-start gap-1.5 whitespace-nowrap">
+            <div className="md:hidden w-full min-w-0">
               {user ? (
-                <>
+                <div className="grid w-full grid-cols-3 gap-1.5">
                   {links.map(link => (
                     <Link
                       key={link.name}
                       href={link.href}
-                      className={`rounded-full px-2 py-1.5 text-[8px] font-mono tracking-[0.13em] uppercase transition-colors border shrink-0 ${
+                      className={`min-w-0 rounded-full px-2 py-1.5 text-[8px] font-mono tracking-[0.12em] uppercase transition-colors border text-center ${
                         pathname === link.href
                           ? 'text-ecto-green border-ecto-green/30 bg-ecto-green/5'
                           : 'text-ghost-white/60 border-glass-border hover:text-ghost-white hover:border-ghost-white/20'
@@ -118,8 +118,8 @@ export default function Navbar() {
                       {link.name}
                     </Link>
                   ))}
-                  <div className="relative shrink-0">
-                    <button onClick={() => setShowDevMenu(!showDevMenu)} className="rounded-full border border-glass-border p-2 text-ghost-white/40 hover:text-ghost-white transition-colors">
+                  <div className="relative min-w-0">
+                    <button onClick={() => setShowDevMenu(!showDevMenu)} className="flex h-full w-full items-center justify-center rounded-full border border-glass-border p-2 text-ghost-white/40 hover:text-ghost-white transition-colors">
                       <Code2 className="h-4 w-4" />
                     </button>
                     {showDevMenu && (
@@ -142,12 +142,12 @@ export default function Navbar() {
                       </>
                     )}
                   </div>
-                  <button onClick={() => setShowLogoutModal(true)} className="rounded-full px-2.5 py-1.5 text-[8px] font-mono tracking-[0.13em] uppercase text-red-400/70 border border-red-400/30 shrink-0">
+                  <button onClick={() => setShowLogoutModal(true)} className="rounded-full px-2 py-1.5 text-[8px] font-mono tracking-[0.12em] uppercase text-red-400/70 border border-red-400/30 text-center">
                     Logout
                   </button>
-                </>
+                </div>
               ) : (
-                <>
+                <div className="flex items-center gap-1.5 justify-end">
                   <div className="relative shrink-0">
                     <button onClick={() => setShowDevMenu(!showDevMenu)} className="rounded-full border border-glass-border p-2 text-ghost-white/40 hover:text-ghost-white transition-colors">
                       <Code2 className="h-4 w-4" />
@@ -175,7 +175,7 @@ export default function Navbar() {
                   <Link href="/login" className="btn-ghost text-[10px] py-2 px-4 shrink-0">
                     Sign In / Sign Up
                   </Link>
-                </>
+                </div>
               )}
             </div>
           </div>
