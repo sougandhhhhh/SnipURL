@@ -104,12 +104,12 @@ export default function Navbar() {
 
             <div className="md:hidden w-full min-w-0">
               {user ? (
-                <div className="flex w-full items-center gap-1.5 flex-nowrap overflow-hidden">
+                <div className="flex w-full items-center gap-1.5 flex-nowrap">
                   {links.map(link => (
                     <Link
                       key={link.name}
                       href={link.href}
-                      className={`flex-1 min-w-0 rounded-full px-1.5 py-1.5 text-[7px] font-mono tracking-[0.1em] uppercase transition-colors border text-center whitespace-nowrap overflow-hidden text-ellipsis ${
+                      className={`flex-[1_1_0] min-w-0 rounded-full px-1.5 py-1.5 text-[7px] font-mono tracking-[0.1em] uppercase transition-colors border text-center whitespace-nowrap overflow-hidden text-ellipsis ${
                         pathname === link.href
                           ? 'text-ecto-green border-ecto-green/30 bg-ecto-green/5'
                           : 'text-ghost-white/60 border-glass-border hover:text-ghost-white hover:border-ghost-white/20'
@@ -119,7 +119,7 @@ export default function Navbar() {
                     </Link>
                   ))}
                   <div className="relative shrink-0">
-                    <button onClick={() => setShowDevMenu(!showDevMenu)} className="flex h-9 w-9 items-center justify-center rounded-full border border-glass-border text-ghost-white/40 hover:text-ghost-white transition-colors">
+                    <button onClick={() => setShowDevMenu(!showDevMenu)} className="flex h-9 w-9 items-center justify-center rounded-full text-ghost-white/40 hover:text-ghost-white transition-colors">
                       <Code2 className="h-4 w-4" />
                     </button>
                     {showDevMenu && (
