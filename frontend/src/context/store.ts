@@ -235,6 +235,13 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     }
   };
 
+  const normalizeShortCode = (input: string) => {
+    const trimmed = input.trim();
+    const withoutProtocol = trimmed.replace(/^https?:\/\/[^\/]+\/+/i, '').replace(/^\/+/, '');
+    const withoutPasswordRoute = withoutProtocol.replace(/^p\//i, '').replace(/^p\//i, '');
+    return withoutPasswordRoute.replace(/\/+$/, '');
+  };
+
   const getApiKeyHeader = (): string | undefined => {
     if (!isClient) return undefined;
     const stored = localStorage.getItem('snap-service-key');
@@ -443,7 +450,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     },
 
     expandUrl: async (code) => {
-      const cleanCode = code.replace(/^https?:\/\/[^\/]+\//, '').replace(/^\/+/, '').replace(/\/+$/, '');
+      const cleanCode = normalizeShortCode(code);
       const baseUrl = (process.env.NEXT_PUBLIC_API_URL ?? '').trim();
       const url = `${baseUrl}/api/v1/resolve/${encodeURIComponent(cleanCode)}`;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -459,7 +466,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     },
 
     unlockUrl: async (code, password) => {
-      const cleanCode = code.replace(/^https?:\/\/[^\/]+\//, '').replace(/^\/+/, '').replace(/\/+$/, '');
+      const cleanCode = normalizeShortCode(code);
       const baseUrl = (process.env.NEXT_PUBLIC_API_URL ?? '').trim();
       const url = `${baseUrl}/api/v1/resolve/${encodeURIComponent(cleanCode)}`;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
