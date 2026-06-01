@@ -237,7 +237,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
 
   const normalizeShortCode = (input: string) => {
     const trimmed = input.trim();
-    const withoutProtocol = trimmed.replace(/^https?:\/\/[^\/]+\/+/i, '').replace(/^\/+/, '');
+    const withoutProtocol = trimmed.replace(/^(?:https?:\/\/)?[^\/]+\/+/i, '').replace(/^\/+/, '');
     const withoutQuery = withoutProtocol.split(/[?#]/)[0];
     const withoutPasswordRoute = withoutQuery.replace(/^p\//i, '');
     return withoutPasswordRoute.replace(/\/+$/, '');
