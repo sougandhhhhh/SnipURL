@@ -69,6 +69,7 @@ interface SnapStore {
   // Link Operations
   shortenUrl: (longUrl: string, options?: { customAlias?: string; password?: string; expiresAt?: number; isOneTime?: boolean }) => Promise<Link>;
   expandUrl: (code: string) => Promise<{ longUrl: string } | { passwordProtected: boolean; shortCode: string }>;
+  expandExternalUrl: (url: string) => Promise<{ longUrl: string }>;
   unlockUrl: (code: string, password: string) => Promise<{ longUrl: string }>;
   updateLink: (id: string, updates: Partial<Pick<Link, 'longUrl' | 'isActive' | 'password' | 'expiresAt'>>) => Promise<boolean>;
   deleteLink: (id: string) => Promise<boolean>;
@@ -241,6 +242,20 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     const withoutQuery = withoutProtocol.split(/[?#]/)[0];
     const withoutPasswordRoute = withoutQuery.replace(/^p\//i, '');
     return withoutPasswordRoute.replace(/\/+$/, '');
+  };
+
+  const normalizeExternalUrl = (input: string) => {
+    const trimmed = input.trim();
+    if (!trimmed) return '';
+    try {
+      return new URL(trimmed).href;
+    } catch {
+      try {
+        return new URL(`https://${trimmed}`).href;
+      } catch {
+        return trimmed;
+      }
+    }
   };
 
   const getApiKeyHeader = (): string | undefined => {
@@ -463,6 +478,25 @@ export const useSnapStore = create<SnapStore>((set, get) => {
         if (data.passwordProtected || response.status === 401 || response.status === 403) {
           return { passwordProtected: true, shortCode: data.shortCode || cleanCode };
         }
+        throw new Error(data.error || response.statusText);
+      }
+      return data;
+    },
+
+    expandExternalUrl: async (url) => {
+      const normalizedUrl = normalizeExternalUrl(url);
+      const baseUrl = (process.env.NEXT_PUBLIC_API_URL ?? '').trim();
+      const endpoint = `${baseUrl}/api/v1/external/resolve`;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const apiKey = getApiKeyHeader();
+      if (apiKey) headers['x-api-key'] = apiKey;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ url: normalizedUrl }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
         throw new Error(data.error || response.statusText);
       }
       return data;

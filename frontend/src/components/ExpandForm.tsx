@@ -5,7 +5,7 @@ import { useSnapStore } from '../context/store';
 import { ExternalLink, Copy, Check, AlertTriangle, Lock, Unlock, ClipboardPaste } from 'lucide-react';
 
 export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) {
-  const { expandUrl, unlockUrl } = useSnapStore();
+  const { expandUrl, expandExternalUrl, unlockUrl } = useSnapStore();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ longUrl?: string; passwordProtected?: boolean; shortCode?: string; error?: string; externalUrl?: string } | null>(null);
@@ -26,6 +26,12 @@ export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) 
         return null;
       }
     }
+  };
+
+  const looksLikeExternalUrl = (value: string) => {
+    const raw = value.trim();
+    if (!raw) return false;
+    return /:\/\//i.test(raw) || /^www\./i.test(raw) || /^[^\s/]+\.[^\s/]+/i.test(raw);
   };
 
   const isSnipUrlHost = (host: string) => {
@@ -49,11 +55,16 @@ export default function ExpandForm({ origin: baseOrigin }: { origin?: string }) 
     setPasswordError('');
     try {
       const parsed = parseUrl(input);
-      if (parsed && !isSnipUrlHost(parsed.host)) {
-        setResult({
-          error: 'External short link detected. Open the provider\'s official unlock page to enter the password.',
-          externalUrl: parsed.href,
-        });
+      if (parsed && looksLikeExternalUrl(input) && !isSnipUrlHost(parsed.host)) {
+        try {
+          const data = await expandExternalUrl(parsed.href);
+          setResult({ longUrl: data.longUrl });
+        } catch (err: any) {
+          setResult({
+            error: err.message || 'Failed to resolve external link',
+            externalUrl: parsed.href,
+          });
+        }
         return;
       }
 

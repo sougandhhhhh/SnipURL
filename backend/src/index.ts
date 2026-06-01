@@ -920,4 +920,72 @@ app.post('/api/v1/resolve/:code', async (c) => {
   return c.json({ longUrl: linkData.longUrl });
 });
 
+app.post('/api/v1/external/resolve', async (c) => {
+  try {
+    const body = await c.req.json();
+    const rawUrl = String(body?.url || '').trim();
+    if (!rawUrl) {
+      return c.json({ error: 'Missing url' }, 400);
+    }
+
+    const normalizedUrl = (() => {
+      try {
+        return new URL(rawUrl).href;
+      } catch {
+        try {
+          return new URL(`https://${rawUrl}`).href;
+        } catch {
+          return '';
+        }
+      }
+    })();
+
+    if (!normalizedUrl) {
+      return c.json({ error: 'Invalid URL' }, 400);
+    }
+
+    const target = new URL(normalizedUrl);
+    if (target.protocol !== 'http:' && target.protocol !== 'https:') {
+      return c.json({ error: 'Invalid URL scheme' }, 400);
+    }
+
+    const host = target.hostname.toLowerCase();
+    const blockedHost =
+      host === 'localhost' ||
+      host.endsWith('.localhost') ||
+      host === '127.0.0.1' ||
+      host === '::1' ||
+      host.startsWith('127.') ||
+      host.startsWith('10.') ||
+      host.startsWith('192.168.') ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(host) ||
+      host.endsWith('.local') ||
+      host.endsWith('.internal');
+
+    if (blockedHost) {
+      return c.json({ error: 'Unsupported external host' }, 400);
+    }
+
+    const response = await fetch(target.toString(), {
+      redirect: 'follow',
+      headers: {
+        'user-agent': 'SnipURL-Resolver/1.0',
+        accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+    });
+
+    if (!response.ok && response.status !== 301 && response.status !== 302 && response.status !== 303 && response.status !== 307 && response.status !== 308) {
+      return c.json({ error: `Failed to resolve external link (${response.status})` }, 400);
+    }
+
+    if (response.url === target.toString()) {
+      return c.json({ error: 'Could not resolve a public redirect for this link' }, 400);
+    }
+
+    return c.json({ longUrl: response.url });
+  } catch (err: any) {
+    return c.json({ error: err?.message || 'Failed to resolve external link' }, 500);
+  }
+});
+
 export default app;
