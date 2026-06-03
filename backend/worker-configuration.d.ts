@@ -4,4 +4,5 @@ interface Env {
 	FRONTEND_URL: "https://url6.vercel.app";
 	SERVICE_API_KEY: "su_dev_bootstrap_key";
 	DB: D1Database;
+	KV: KVNamespace;
 }
