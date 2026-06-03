@@ -14,15 +14,18 @@ interface Env {
 
 const app = new Hono<{ Bindings: Env }>();
 
-const deactivateOneTimeLink = async (c: any, db: ReturnType<typeof drizzle>, linkId: string, code: string) => {
-  await db.update(schema.links)
-    .set({ isActive: false, updatedAt: Date.now() })
-    .where(eq(schema.links.id, linkId));
-
+const deactivateOneTimeLink = async (c: any, linkId: string, code: string): Promise<boolean> => {
   try {
-    if (c.env.KV) await c.env.KV.delete(`code:${code}`);
+    const result = await c.env.DB.prepare(
+      'UPDATE links SET is_active = 0, updated_at = ? WHERE id = ? AND is_active = 1'
+    ).bind(Date.now(), linkId).run();
+
+    try { if (c.env.KV) await c.env.KV.delete(`code:${code}`); } catch {}
+
+    return (result.meta?.changes ?? 0) > 0;
   } catch (err) {
-    console.error('Failed to delete one-time KV cache:', err);
+    console.error('Failed to deactivate one-time link:', err);
+    return false;
   }
 };
 
@@ -168,13 +171,11 @@ app.get('/:code', async (c) => {
     })()
   );
 
-  // Deactivate one-time links before redirecting so the next request can't reuse cached state.
+  // Atomically deactivate one-time links — if another request already won, redirect to 404
   if (linkData.isOneTime) {
-    try {
-      await deactivateOneTimeLink(c, db, linkData.id, code);
-      linkData.isActive = false;
-    } catch (err) {
-      console.error('Failed to deactivate one-time link:', err);
+    const deactivated = await deactivateOneTimeLink(c, linkData.id, code);
+    if (!deactivated) {
+      return c.redirect(`${frontendUrl}/404`);
     }
   }
 
@@ -876,13 +877,11 @@ app.get('/api/v1/resolve/:code', async (c) => {
     return c.json({ passwordProtected: true, shortCode: code });
   }
 
-  // Deactivate one-time links before returning the redirect so repeat opens can't reuse cache.
+  // Atomically deactivate one-time links — return Expired if another request already won
   if (linkData.isOneTime) {
-    try {
-      await deactivateOneTimeLink(c, db, linkData.id, code);
-      linkData.isActive = false;
-    } catch (err) {
-      console.error('Failed to deactivate one-time link:', err);
+    const deactivated = await deactivateOneTimeLink(c, linkData.id, code);
+    if (!deactivated) {
+      return c.json({ error: 'Expired' }, 410);
     }
   }
 
@@ -919,11 +918,9 @@ app.post('/api/v1/resolve/:code', async (c) => {
   }
 
   if (linkData.isOneTime) {
-    try {
-      const db = drizzle(c.env.DB, { schema });
-      await deactivateOneTimeLink(c, db, linkData.id, code);
-    } catch (err) {
-      console.error('Failed to deactivate one-time link after unlock:', err);
+    const deactivated = await deactivateOneTimeLink(c, linkData.id, code);
+    if (!deactivated) {
+      return c.json({ error: 'Expired' }, 410);
     }
   }
 
