@@ -111,7 +111,7 @@ export default function Navbar() {
                           href={link.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+                          className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 hover:shadow-[0_0_12px_rgba(57,255,144,0.25)] transition-all"
                           title={link.label}
                         >
                           {link.icon}
@@ -174,7 +174,7 @@ export default function Navbar() {
                                 href={link.href}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+                                className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 hover:shadow-[0_0_12px_rgba(57,255,144,0.25)] transition-all"
                                 title={link.label}
                               >
                                 {link.icon}
@@ -217,7 +217,7 @@ export default function Navbar() {
                                 href={link.href}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+                                className="p-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 hover:shadow-[0_0_12px_rgba(57,255,144,0.25)] transition-all"
                                 title={link.label}
                               >
                                 {link.icon}
