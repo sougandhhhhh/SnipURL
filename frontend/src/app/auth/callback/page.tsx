@@ -12,13 +12,17 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // Extract auth params from URL hash (OAuth redirect)
+      // Handle PKCE flow (code in query params) or implicit flow (tokens in hash)
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get('code');
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
 
-      if (accessToken) {
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+      } else if (accessToken) {
         await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || '',
