@@ -29,6 +29,9 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
+      // Flush microtasks so the onAuthStateChange callback (which calls setAll)
+      // completes before we return the response
+      await new Promise(resolve => setTimeout(resolve, 0))
       return redirectResponse
     }
   }

@@ -1096,13 +1096,17 @@ app.post('/api/v1/external/resolve', async (c) => {
       return c.json({ error: 'Unsupported external host' }, 400);
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     const response = await fetch(target.toString(), {
+      signal: controller.signal,
       redirect: 'follow',
       headers: {
         'user-agent': 'SnipURL-Resolver/1.0',
         accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
     });
+    clearTimeout(timeout);
 
     if (!response.ok && response.status !== 301 && response.status !== 302 && response.status !== 303 && response.status !== 307 && response.status !== 308) {
       return c.json({ error: `Failed to resolve external link (${response.status})` }, 400);
