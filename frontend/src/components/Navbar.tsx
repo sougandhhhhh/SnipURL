@@ -99,11 +99,11 @@ export default function Navbar() {
                 <AnimatePresence>
                   {devOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                      initial={{ opacity: 0, x: 4, scale: 0.95 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: 4, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 z-50 flex items-center gap-1.5 p-2 rounded-xl border border-border/40 bg-card shadow-xl"
+                      className="absolute right-full mr-2 top-1/2 -translate-y-1/2 z-50 flex items-center gap-1.5 p-2 rounded-xl border border-border/40 bg-card shadow-xl"
                     >
                       {SOCIALS.map(link => (
                         <a
@@ -166,7 +166,7 @@ export default function Navbar() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -4, scale: 0.95 }}
                             transition={{ duration: 0.15 }}
-                            className="absolute right-0 top-full mt-2 z-50 flex items-center gap-1.5 p-2 rounded-xl border border-border/40 bg-card shadow-xl"
+                            className="absolute right-full mr-2 top-1/2 -translate-y-1/2 z-50 flex items-center gap-1.5 p-2 rounded-xl border border-border/40 bg-card shadow-xl"
                           >
                             {SOCIALS.map(link => (
                               <a
@@ -209,7 +209,7 @@ export default function Navbar() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -4, scale: 0.95 }}
                             transition={{ duration: 0.15 }}
-                            className="absolute right-0 top-full mt-2 z-50 flex items-center gap-1.5 p-2 rounded-xl border border-border/40 bg-card shadow-xl"
+                            className="absolute right-full mr-2 top-1/2 -translate-y-1/2 z-50 flex items-center gap-1.5 p-2 rounded-xl border border-border/40 bg-card shadow-xl"
                           >
                             {SOCIALS.map(link => (
                               <a
