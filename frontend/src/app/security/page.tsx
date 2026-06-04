@@ -67,10 +67,6 @@ export default function SecurityPage() {
               <li>Remediation steps and preventative measures will be shared</li>
             </ul>
           </section>
-          <section className="space-y-4">
-            <h2 className="font-display text-xl tracking-[0.05em] text-ecto-green">7. Vulnerability Disclosure</h2>
-            <p>If you discover a security vulnerability in SnipURL, please report it responsibly to <span className="text-ecto-green/70">security@snipurl.co</span></p>
-          </section>
 
         </div>
       </div>
