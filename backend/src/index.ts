@@ -764,66 +764,6 @@ app.delete('/api/v1/admin/reports/:id', authenticateApiKey, async (c) => {
   }
 });
 
-// D6. One-time migration: hash existing plaintext passwords and API keys (admin only)
-// Run ONCE after deploying the hashing changes, then remove this endpoint.
-app.post('/api/v1/admin/migrate-hashes', authenticateApiKey, async (c) => {
-  const userId = c.get('userId');
-  const db = drizzle(c.env.DB, { schema });
-
-  try {
-    const [user] = await db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.id, userId))
-      .limit(1);
-
-    if (!user || user.role !== 'admin') {
-      return c.json({ error: 'Access denied' }, 403);
-    }
-
-    const isAlreadyHashed = (val: string) => val.length === 64 && /^[a-f0-9]+$/.test(val);
-
-    // Migrate link passwords
-    const allLinks = await db
-      .select()
-      .from(schema.links)
-      .where(sql`${schema.links.password} IS NOT NULL`);
-
-    let linksMigrated = 0;
-    for (const link of allLinks) {
-      if (link.password && !isAlreadyHashed(link.password)) {
-        const hashed = await hashString(link.password);
-        await db.update(schema.links).set({ password: hashed }).where(eq(schema.links.id, link.id));
-        linksMigrated++;
-      }
-    }
-
-    // Migrate API keys (skip bootstrap key pattern)
-    const allKeys = await db
-      .select()
-      .from(schema.apiKeys)
-      .where(sql`${schema.apiKeys.keyHash} NOT LIKE 'su_dev_%'`);
-
-    let keysMigrated = 0;
-    for (const key of allKeys) {
-      if (!isAlreadyHashed(key.keyHash)) {
-        const hashed = await hashString(key.keyHash);
-        await db.update(schema.apiKeys).set({ keyHash: hashed }).where(eq(schema.apiKeys.id, key.id));
-        keysMigrated++;
-      }
-    }
-
-    return c.json({
-      success: true,
-      message: 'Migration complete',
-      linksMigrated,
-      keysMigrated,
-    });
-  } catch (err: any) {
-    return c.json({ error: err.message || 'Migration failed' }, 500);
-  }
-});
-
 // E. Retrieve Analytical Report
 app.get('/api/v1/analytics/:linkId', authenticateApiKey, async (c) => {
   const linkId = c.req.param('linkId');
