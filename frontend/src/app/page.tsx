@@ -245,7 +245,7 @@ export default function LandingPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div className="space-y-1">
                   <div className="flex flex-col px-1">
-                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30">Alias</span>
+                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ecto-green/60">Alias</span>
                     <span className="block font-mono text-[7px] tracking-[0.1em] text-ghost-white/20">Set a custom short code</span>
                   </div>
                   <input type="text" value={customAlias} onChange={e => setCustomAlias(e.target.value)}
@@ -253,7 +253,7 @@ export default function LandingPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="flex flex-col px-1">
-                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30">Protect</span>
+                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ecto-green/60">Protect</span>
                     <span className="block font-mono text-[7px] tracking-[0.1em] text-ghost-white/20">Password-protect your link</span>
                   </div>
                   <input type="password" value={password} onChange={e => setPassword(e.target.value)}
@@ -261,7 +261,7 @@ export default function LandingPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="flex flex-col px-1">
-                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30">Expire</span>
+                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ecto-green/60">Expire</span>
                     <span className="block font-mono text-[7px] tracking-[0.1em] text-ghost-white/20">Set an auto-expire date</span>
                   </div>
                   <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)}
@@ -269,7 +269,7 @@ export default function LandingPage() {
                 </div>
                 <div className="space-y-1">
                   <div className="flex flex-col px-1">
-                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30">One-time</span>
+                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ecto-green/60">One-time</span>
                     <span className="block font-mono text-[7px] tracking-[0.1em] text-ghost-white/20">Expires after first visit</span>
                   </div>
                   <label className="flex items-center justify-center gap-2 h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 cursor-pointer hover:border-ecto-green/40 transition-colors">
