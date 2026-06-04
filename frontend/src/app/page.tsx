@@ -152,7 +152,12 @@ export default function LandingPage() {
               </p>
             ) : (
               <div className="pt-2">
-                <Link href="/login" className="btn-ghost text-sm py-3 px-8">Sign In / Sign Up</Link>
+                <Link
+                  href={`${(process.env.NEXT_PUBLIC_APP_URL || origin).replace(/\/+$/, '')}/login`}
+                  className="btn-ghost text-sm py-3 px-8"
+                >
+                  Sign In / Sign Up
+                </Link>
               </div>
             )}
           </div>

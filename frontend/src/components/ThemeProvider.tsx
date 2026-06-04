@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useSnapStore } from '../context/store';
 
 function useMediaQuery(query: string) {
@@ -113,18 +112,23 @@ function Particles() {
 }
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const restoreSession = useSnapStore(s => s.restoreSession);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get('code');
     if (code && !window.location.pathname.startsWith('/auth/callback')) {
-      router.replace(`/auth/callback?code=${code}`);
+      const appUrl = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_APP_URL : undefined) || window.location.origin;
+      const cleanAppUrl = appUrl.replace(/\/+$/, '');
+      if (window.location.origin !== cleanAppUrl) {
+        window.location.href = `${cleanAppUrl}/auth/callback?code=${code}`;
+      } else {
+        window.location.replace(`/auth/callback?code=${code}`);
+      }
       return;
     }
     restoreSession();
-  }, [router, restoreSession]);
+  }, [restoreSession]);
 
   return (
     <>

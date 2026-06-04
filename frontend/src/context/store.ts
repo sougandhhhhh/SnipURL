@@ -366,9 +366,10 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     },
 
     signInWithGoogle: async () => {
+      const appUrl = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_APP_URL : undefined) || window.location.origin;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: { redirectTo: `${appUrl.replace(/\/+$/, '')}/auth/callback` },
       });
       if (error) throw new Error(error.message);
       if (data?.url) {
