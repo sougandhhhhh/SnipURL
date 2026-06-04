@@ -118,7 +118,10 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get('code');
     if (code && !window.location.pathname.startsWith('/auth/callback')) {
-      const appUrl = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_APP_URL : undefined) || window.location.origin;
+      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const appUrl = isLocal
+        ? window.location.origin
+        : (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_APP_URL : undefined) || window.location.origin;
       const cleanAppUrl = appUrl.replace(/\/+$/, '');
       if (window.location.origin !== cleanAppUrl) {
         window.location.href = `${cleanAppUrl}/auth/callback?code=${code}`;
