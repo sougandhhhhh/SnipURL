@@ -44,7 +44,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-8 border-t border-glass-border pt-5 flex flex-col md:flex-row justify-between items-center text-[10px] font-mono tracking-[0.1em] uppercase text-ghost-white gap-4">
-          <span>&copy; {new Date().getFullYear()} SnipURL. Spectral rights reserved.</span>
+          <span>&copy; {new Date().getFullYear()} SnipURL. All rights reserved.</span>
           <div className="flex space-x-6">
             <Link href="/privacy" className="hover:text-ghost-white/50 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-ghost-white/50 transition-colors">Terms</Link>
