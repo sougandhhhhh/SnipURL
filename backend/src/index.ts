@@ -853,9 +853,24 @@ app.post('/api/v1/auth/supabase', async (c) => {
       .limit(1);
 
     if (!existingUser) {
-      const newUser = { id: supabaseId, email, name: displayName, passwordHash: null, role: 'user', createdAt: now };
-      await db.insert(schema.users).values(newUser);
-      existingUser = newUser as any;
+      // Check if a user with this email already exists (e.g. different OAuth session)
+      const [userByEmail] = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, email))
+        .limit(1);
+
+      if (userByEmail) {
+        // Reclaim the existing account by updating the ID to match this Supabase ID
+        await db.update(schema.users)
+          .set({ id: supabaseId, name: displayName })
+          .where(eq(schema.users.id, userByEmail.id));
+        existingUser = { ...userByEmail, id: supabaseId, name: displayName };
+      } else {
+        const newUser = { id: supabaseId, email, name: displayName, passwordHash: null, role: 'user', createdAt: now };
+        await db.insert(schema.users).values(newUser);
+        existingUser = newUser as any;
+      }
     } else {
       await db.update(schema.users)
         .set({ email, name: displayName })
@@ -877,10 +892,11 @@ app.post('/api/v1/auth/supabase', async (c) => {
     }
 
     const rawKey = `su_live_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+    const hashedKey = await hashString(rawKey);
     const newKey = {
       id: crypto.randomUUID(),
       userId: supabaseId,
-      keyHash: rawKey,
+      keyHash: hashedKey,
       name: 'Auto-generated',
       createdAt: now,
       lastUsedAt: null,

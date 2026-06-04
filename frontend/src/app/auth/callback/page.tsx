@@ -12,30 +12,34 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // Handle PKCE flow (code in query params) or implicit flow (tokens in hash)
-      const searchParams = new URLSearchParams(window.location.search);
-      const code = searchParams.get('code');
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
+      try {
+        // Handle PKCE flow (code in query params) or implicit flow (tokens in hash)
+        const searchParams = new URLSearchParams(window.location.search);
+        const code = searchParams.get('code');
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
 
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
-      } else if (accessToken) {
-        await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || '',
-        });
-      }
+        if (code) {
+          await supabase.auth.exchangeCodeForSession(code);
+        } else if (accessToken) {
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+          });
+        }
 
-      // Now get the session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setStatus('Signing in...');
-        await syncSupabaseUser(session.user);
-        router.push('/');
-      } else {
+        // Now get the session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setStatus('Signing in...');
+          await syncSupabaseUser(session.user);
+          router.push('/');
+        } else {
+          router.push('/login');
+        }
+      } catch {
         router.push('/login');
       }
     };
