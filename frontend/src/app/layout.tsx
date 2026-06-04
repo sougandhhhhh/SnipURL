@@ -36,15 +36,18 @@ const nosifer = Nosifer({
   weight: ['400'],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://snipurl2026.vercel.app';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: 'SnipURL',
   description: 'SnipURL — an ethereal, edge-deployed URL shortener with ghost-light redirects and spectral analytics.',
   keywords: 'url shortener, link shortener, ghost theme, edge computing, analytics, snapurl',
-    openGraph: {
+  openGraph: {
     title: 'SnipURL',
     description: 'Ethereal edge-deployed URL shortener with ghost-light redirects.',
     type: 'website',
-    url: 'https://snipurl.co',
+    url: siteUrl,
     images: [{ url: '/og-preview.png', width: 1200, height: 630, alt: 'SnipURL' }],
   },
   twitter: {
