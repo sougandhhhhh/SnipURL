@@ -71,10 +71,7 @@ export default function SecurityPage() {
             <h2 className="font-display text-xl tracking-[0.05em] text-ecto-green">7. Vulnerability Disclosure</h2>
             <p>If you discover a security vulnerability in SnipURL, please report it responsibly to <span className="text-ecto-green/70">security@snipurl.co</span></p>
           </section>
-          <section className="glass rounded-xl p-6 mt-12 space-y-4">
-            <h2 className="font-display text-xl tracking-[0.05em] text-ecto-green">Report a Security Issue</h2>
-            <p>Email <span className="text-ecto-green/70">security@snipurl.co</span> with a description and steps to reproduce.</p>
-          </section>
+
         </div>
       </div>
     </div>

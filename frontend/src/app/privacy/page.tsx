@@ -46,10 +46,7 @@ export default function PrivacyPage() {
             <h2 className="font-display text-xl tracking-[0.05em] text-ecto-green">6. Changes to This Policy</h2>
             <p>We may update this privacy policy periodically. Changes will be posted on this page with an updated &ldquo;Last updated&rdquo; date. Your continued use of SnipURL constitutes acceptance of any changes.</p>
           </section>
-          <section className="glass rounded-xl p-6 mt-12 space-y-4">
-            <h2 className="font-display text-xl tracking-[0.05em] text-ecto-green">Questions?</h2>
-            <p>Contact <span className="text-ecto-green/70">privacy@snipurl.co</span></p>
-          </section>
+
         </div>
       </div>
     </div>

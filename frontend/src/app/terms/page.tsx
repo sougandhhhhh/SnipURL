@@ -49,10 +49,7 @@ export default function TermsPage() {
             <h2 className="font-display text-xl tracking-[0.05em] text-ecto-green">7. Termination</h2>
             <p>We reserve the right to terminate or suspend your account for violations of these terms, including shortening malicious or illegal content. Upon termination, your shortened links may be deactivated.</p>
           </section>
-          <section className="glass rounded-xl p-6 mt-12 space-y-4">
-            <h2 className="font-display text-xl tracking-[0.05em] text-ecto-green">Questions?</h2>
-            <p>Contact <span className="text-ecto-green/70">legal@snipurl.co</span></p>
-          </section>
+
         </div>
       </div>
     </div>
