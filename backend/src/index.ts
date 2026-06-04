@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, and, or, sql, desc } from 'drizzle-orm';
 import * as schema from './db/schema';
-import { encodeSequential, validateUrl, isSpamOrMalicious } from './utils/helpers';
+import { encodeSequential, validateUrl, isSpamOrMalicious, hashString, constantTimeEqual } from './utils/helpers';
 
 interface Env {
   DB: D1Database;
@@ -31,7 +31,7 @@ const deactivateOneTimeLink = async (c: any, linkId: string, code: string): Prom
 
 // Enable CORS for frontend dashboard calls
 app.use('*', cors({
-  origin: '*', // Set to specific frontend domain in production
+  origin: ['https://snipurl2026.vercel.app', 'https://url6.vercel.app', 'http://localhost:3000'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
 }));
@@ -183,6 +183,28 @@ app.get('/:code', async (c) => {
   return c.redirect(linkData.longUrl, 302);
 });
 
+// In-memory rate limiter (per-isolate)
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+const rateLimiter = (maxRequests: number, windowMs: number) => {
+  return async (c: any, next: any) => {
+    const ip = c.req.header('cf-connecting-ip') || c.req.header('x-real-ip') || '127.0.0.1';
+    const key = `${c.req.method}:${c.req.path}:${ip}`;
+    const now = Date.now();
+    const entry = rateLimitStore.get(key);
+    if (!entry || now > entry.resetAt) {
+      rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+      await next();
+      return;
+    }
+    if (entry.count >= maxRequests) {
+      return c.json({ error: 'Too many requests. Try again later.' }, 429);
+    }
+    entry.count++;
+    await next();
+  };
+};
+
 /**
  * 2. API SYSTEM - AUTH MIDDLEWARE
  */
@@ -201,10 +223,11 @@ const authenticateApiKey = async (c: any, next: any) => {
 
   const db = drizzle(c.env.DB, { schema });
   try {
+    const hashedIncoming = await hashString(apiKey);
     const keys = await db
       .select()
       .from(schema.apiKeys)
-      .where(eq(schema.apiKeys.keyHash, apiKey))
+      .where(eq(schema.apiKeys.keyHash, hashedIncoming))
       .limit(1);
 
     if (keys.length === 0) {
@@ -281,6 +304,7 @@ app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
       if (!shortCode) return c.json({ error: 'Could not generate unique code' }, 500);
     }
 
+    const hashedPassword = password ? await hashString(password) : null;
     const newLink = {
       id: crypto.randomUUID(),
       userId,
@@ -289,7 +313,7 @@ app.post('/api/v1/shorten', authenticateApiKey, async (c) => {
       customAlias: customAlias ? shortCode : null,
       isActive: true,
       isOneTime: isOneTime === true,
-      password: password || null,
+      password: hashedPassword,
       expiresAt: expiresAt ? Number(expiresAt) : null,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -491,10 +515,11 @@ app.post('/api/v1/apikeys', authenticateApiKey, async (c) => {
 
   try {
     const rawKey = `su_live_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+    const hashedKey = await hashString(rawKey);
     const newKey = {
       id: crypto.randomUUID(),
       userId,
-      keyHash: rawKey,
+      keyHash: hashedKey,
       name,
       createdAt: Date.now(),
       lastUsedAt: null,
@@ -559,7 +584,7 @@ app.put('/api/v1/links/:id', authenticateApiKey, async (c) => {
       updateData.longUrl = longUrl;
     }
     if (isActive !== undefined) updateData.isActive = !!isActive;
-    if (password !== undefined) updateData.password = password || null;
+    if (password !== undefined) updateData.password = password ? await hashString(password) : null;
     if (expiresAt !== undefined) updateData.expiresAt = expiresAt ? Number(expiresAt) : null;
 
     await db.update(schema.links).set(updateData).where(eq(schema.links.id, id));
@@ -658,6 +683,87 @@ app.post('/api/v1/links/claim', authenticateApiKey, async (c) => {
   }
 });
 
+// D3. Report a Link (allows reports from unauthenticated users)
+app.post('/api/v1/links/report', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { shortCode, reason } = body;
+    if (!shortCode || !reason) return c.json({ error: 'shortCode and reason required' }, 400);
+
+    const db = drizzle(c.env.DB, { schema });
+    const [link] = await db
+      .select()
+      .from(schema.links)
+      .where(eq(schema.links.shortCode, shortCode))
+      .limit(1);
+
+    if (!link) return c.json({ error: 'Link not found' }, 404);
+
+    await db.insert(schema.reports).values({
+      id: crypto.randomUUID(),
+      linkId: link.id,
+      reason,
+      reportedAt: Date.now(),
+      resolvedAt: null,
+    });
+
+    return c.json({ success: true, message: 'Link reported for review' }, 201);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to report link' }, 500);
+  }
+});
+
+// D4. List Reports (admin only)
+app.get('/api/v1/admin/reports', authenticateApiKey, async (c) => {
+  const userId = c.get('userId');
+  const db = drizzle(c.env.DB, { schema });
+
+  try {
+    const [user] = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    if (!user || user.role !== 'admin') {
+      return c.json({ error: 'Access denied' }, 403);
+    }
+
+    const allReports = await db
+      .select()
+      .from(schema.reports)
+      .orderBy(desc(schema.reports.reportedAt));
+
+    return c.json({ success: true, reports: allReports });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to fetch reports' }, 500);
+  }
+});
+
+// D5. Resolve/Delete Report (admin only)
+app.delete('/api/v1/admin/reports/:id', authenticateApiKey, async (c) => {
+  const reportId = c.req.param('id');
+  const userId = c.get('userId');
+  const db = drizzle(c.env.DB, { schema });
+
+  try {
+    const [user] = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    if (!user || user.role !== 'admin') {
+      return c.json({ error: 'Access denied' }, 403);
+    }
+
+    await db.delete(schema.reports).where(eq(schema.reports.id, reportId));
+    return c.json({ success: true, message: 'Report resolved' });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to resolve report' }, 500);
+  }
+});
+
 // E. Retrieve Analytical Report
 app.get('/api/v1/analytics/:linkId', authenticateApiKey, async (c) => {
   const linkId = c.req.param('linkId');
@@ -747,7 +853,7 @@ app.post('/api/v1/auth/supabase', async (c) => {
       .limit(1);
 
     if (!existingUser) {
-      const newUser = { id: supabaseId, email, name: displayName, passwordHash: null, createdAt: now };
+      const newUser = { id: supabaseId, email, name: displayName, passwordHash: null, role: 'user', createdAt: now };
       await db.insert(schema.users).values(newUser);
       existingUser = newUser as any;
     } else {
@@ -765,7 +871,7 @@ app.post('/api/v1/auth/supabase', async (c) => {
     if (existingKey) {
       return c.json({
         success: true,
-        user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, dateOfBirth: existingUser.dateOfBirth, passwordSet: existingUser.passwordHash !== null, role: existingUser.email?.includes('admin') ? 'admin' : 'user' },
+        user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, dateOfBirth: existingUser.dateOfBirth, passwordSet: existingUser.passwordHash !== null, role: existingUser.role || 'user' },
         apiKey: { id: existingKey.id, userId: existingKey.userId, name: existingKey.name, keyHash: existingKey.keyHash, createdAt: existingKey.createdAt, lastUsedAt: existingKey.lastUsedAt },
       });
     }
@@ -784,7 +890,7 @@ app.post('/api/v1/auth/supabase', async (c) => {
 
     return c.json({
       success: true,
-      user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, role: existingUser.email?.includes('admin') ? 'admin' : 'user' },
+      user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, role: existingUser.role || 'user' },
       apiKey: newKey,
       rawKey,
     }, 201);
@@ -815,7 +921,7 @@ app.put('/api/v1/user/profile', authenticateApiKey, async (c) => {
 
     return c.json({
       success: true,
-      user: { id: updated.id, email: updated.email, name: updated.name, dateOfBirth: updated.dateOfBirth, passwordSet: updated.passwordHash !== null, role: updated.email?.includes('admin') ? 'admin' : 'user' },
+      user: { id: updated.id, email: updated.email, name: updated.name, dateOfBirth: updated.dateOfBirth, passwordSet: updated.passwordHash !== null, role: updated.role || 'user' },
     });
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to update profile' }, 500);
@@ -888,7 +994,7 @@ app.get('/api/v1/resolve/:code', async (c) => {
   return c.json({ longUrl: linkData.longUrl });
 });
 
-app.post('/api/v1/resolve/:code', async (c) => {
+app.post('/api/v1/resolve/:code', rateLimiter(10, 60000), async (c) => {
   const code = c.req.param('code');
   const { password } = await c.req.json();
   let linkData: any = null;
@@ -914,7 +1020,8 @@ app.post('/api/v1/resolve/:code', async (c) => {
 
   if (linkData.password) {
     if (!password) return c.json({ error: 'Password required' }, 401);
-    if (password !== linkData.password) return c.json({ error: 'Incorrect password' }, 403);
+    const hashedInput = await hashString(password);
+    if (!constantTimeEqual(hashedInput, linkData.password)) return c.json({ error: 'Incorrect password' }, 403);
   }
 
   if (linkData.isOneTime) {

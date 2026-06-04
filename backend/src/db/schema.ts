@@ -6,6 +6,7 @@ export const users = sqliteTable('users', {
   name: text('name'),
   dateOfBirth: text('date_of_birth'),
   passwordHash: text('password_hash'),
+  role: text('role').default('user').notNull(),
   createdAt: integer('created_at').notNull()
 });
 
@@ -50,4 +51,12 @@ export const sessions = sqliteTable('sessions', {
   userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   token: text('token').unique().notNull(),
   expiresAt: integer('expires_at').notNull()
+});
+
+export const reports = sqliteTable('reports', {
+  id: text('id').primaryKey(),
+  linkId: text('link_id').references(() => links.id, { onDelete: 'cascade' }).notNull(),
+  reason: text('reason'),
+  reportedAt: integer('reported_at').notNull(),
+  resolvedAt: integer('resolved_at')
 });

@@ -5,24 +5,44 @@ import { useRouter } from 'next/navigation';
 import { useSnapStore } from '../../context/store';
 import { Shield, Users, ShieldAlert, Trash2, Eye, Globe, Ban, Search } from 'lucide-react';
 
+interface Report {
+  id: string;
+  linkId: string;
+  reason: string;
+  reportedAt: number;
+  resolvedAt: number | null;
+}
+
 export default function AdminPage() {
   const router = useRouter();
-  const { user, links, reportedLinks, updateLink, deleteLink, fetchLinks } = useSnapStore();
+  const { user, links, apiFetch, updateLink, deleteLink, fetchLinks } = useSnapStore();
 
+  const [reports, setReports] = useState<Report[]>([]);
   const [platformUsers] = useState([
     { id: 'usr-1', name: 'Sougandh K', email: 'sougandh@snapurl.co', role: 'admin', linksCount: 5, status: 'active' },
     { id: 'usr-2', name: 'Albin Joseph', email: 'albin@domain.co', role: 'user', linksCount: 12, status: 'active' },
     { id: 'usr-3', name: 'Sherin Varghese', email: 'sherin@domain.co', role: 'user', linksCount: 8, status: 'active' },
-    { id: 'usr-4', name: 'Spam Bot Crawler', email: 'temp_spam@mailinator.com', role: 'user', linksCount: 42, status: 'blocked' },
   ]);
 
   const [activeTab, setActiveTab] = useState<'reported' | 'users' | 'links'>('reported');
+
+  const fetchReports = async () => {
+    try {
+      const data = await apiFetch('/api/v1/admin/reports');
+      if (Array.isArray(data.reports)) setReports(data.reports);
+    } catch {}
+  };
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
     if (user.role !== 'admin') { router.push('/'); return; }
     fetchLinks();
+    fetchReports();
   }, [user, router, fetchLinks]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') fetchReports();
+  }, [links, user?.role]);
 
   const handleBlockLink = async (linkId: string) => {
     await updateLink(linkId, { isActive: false });
@@ -30,6 +50,13 @@ export default function AdminPage() {
 
   const handleDeleteLink = async (linkId: string) => {
     if (confirm('Permanently purge this link?')) await deleteLink(linkId);
+  };
+
+  const handleResolveReport = async (reportId: string) => {
+    try {
+      await apiFetch(`/api/v1/admin/reports/${reportId}`, { method: 'DELETE' });
+      setReports(prev => prev.filter(r => r.id !== reportId));
+    } catch {}
   };
 
   if (!user || user.role !== 'admin') return null;
@@ -50,7 +77,7 @@ export default function AdminPage() {
           { label: 'Users', val: platformUsers.length, icon: Users },
           { label: 'Links', val: links.length, icon: Globe },
           { label: 'Clicks', val: globalClicks, icon: Eye },
-          { label: 'Reports', val: reportedLinks.length, icon: ShieldAlert },
+          { label: 'Reports', val: reports.length, icon: ShieldAlert },
         ].map((s, i) => {
           const Icon = s.icon;
           return (
@@ -88,11 +115,11 @@ export default function AdminPage() {
       {activeTab === 'reported' && (
         <div className="glass rounded-2xl p-6 space-y-4">
           <h3 className="font-mono text-[10px] tracking-[0.15em] uppercase text-ecto-green/60">Flagged Links</h3>
-          {reportedLinks.length === 0 ? (
+          {reports.length === 0 ? (
             <div className="font-body text-xs text-ghost-white/30 py-8 text-center">No reports — system is clean.</div>
           ) : (
             <div className="space-y-3">
-              {reportedLinks.map(rep => {
+              {reports.map(rep => {
                 const link = links.find(l => l.id === rep.linkId);
                 if (!link) return null;
                 return (
@@ -117,6 +144,10 @@ export default function AdminPage() {
                       <button onClick={() => handleDeleteLink(link.id)}
                         className="rounded-lg bg-white/[0.04] p-2 text-red-400/50 hover:text-red-400 border border-glass-border transition-colors">
                         <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => handleResolveReport(rep.id)}
+                        className="rounded-lg bg-white/[0.04] p-2 text-ecto-green/50 hover:text-ecto-green border border-glass-border transition-colors" title="Resolve report">
+                        <Shield className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>

@@ -90,124 +90,8 @@ interface SnapStore {
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
 }
 
-// Generates high quality pre-seeded chronological analytical clicks over the last 14 days
-const generateSeedClicks = (links: Link[]): ClickLog[] => {
-  const seedLogs: ClickLog[] = [];
-  const countries = ['United States', 'India', 'United Kingdom', 'Germany', 'Canada', 'Australia', 'Brazil', 'France'];
-  const referrers = ['X / Twitter', 'LinkedIn', 'GitHub', 'Direct / Email', 'Reddit', 'HackerNews', 'ProductHunt'];
-  const devices = ['Desktop', 'Mobile', 'Tablet'];
-  const browsers = ['Chrome', 'Safari', 'Firefox', 'Edge'];
-
-  const weightByCountry = [0.4, 0.2, 0.15, 0.08, 0.07, 0.04, 0.03, 0.03];
-  const weightByReferrer = [0.35, 0.25, 0.15, 0.15, 0.05, 0.03, 0.02];
-  const weightByDevice = [0.65, 0.3, 0.05];
-  const weightByBrowser = [0.55, 0.25, 0.12, 0.08];
-
-  const pickWeighted = <T>(items: T[], weights: number[]): T => {
-    const r = Math.random();
-    let sum = 0;
-    for (let i = 0; i < items.length; i++) {
-      sum += weights[i];
-      if (r <= sum) return items[i];
-    }
-    return items[items.length - 1];
-  };
-
-  const now = Date.now();
-  links.forEach(link => {
-    // Generate clicks based on click count
-    for (let i = 0; i < link.clickCount; i++) {
-      // Clicks distributed unevenly in the last 14 days
-      const daysAgo = Math.pow(Math.random(), 1.5) * 14; 
-      const clickedAt = now - daysAgo * 24 * 60 * 60 * 1000;
-
-      seedLogs.push({
-        id: `click-${Math.random().toString(36).substr(2, 9)}`,
-        linkId: link.id,
-        clickedAt,
-        ipAddress: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-        country: pickWeighted(countries, weightByCountry),
-        device: pickWeighted(devices, weightByDevice),
-        browser: pickWeighted(browsers, weightByBrowser),
-        referrer: pickWeighted(referrers, weightByReferrer),
-      });
-    }
-  });
-
-  return seedLogs.sort((a, b) => b.clickedAt - a.clickedAt);
-};
-
-// Initial Seed Links
-const initialMockLinks: Link[] = [
-  {
-    id: 'link-1',
-    userId: 'user-default',
-    shortCode: 'github',
-    longUrl: 'https://github.com/sougandhhhhh',
-    customAlias: 'github',
-    isActive: true,
-    isOneTime: false,
-    expiresAt: null,
-    createdAt: Date.now() - 12 * 24 * 60 * 60 * 1000,
-    updatedAt: Date.now() - 12 * 24 * 60 * 60 * 1000,
-    clickCount: 1245
-  },
-  {
-    id: 'link-2',
-    userId: 'user-default',
-    shortCode: 'portfolio',
-    longUrl: 'https://sougandhhhhh.github.io',
-    customAlias: 'portfolio',
-    isActive: true,
-    isOneTime: false,
-    expiresAt: null,
-    createdAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
-    updatedAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
-    clickCount: 834
-  },
-  {
-    id: 'link-3',
-    userId: 'user-default',
-    shortCode: 'tw-docs',
-    longUrl: 'https://tailwindcss.com/docs',
-    customAlias: 'tw-docs',
-    isActive: true,
-    isOneTime: false,
-    expiresAt: null,
-    createdAt: Date.now() - 5 * 24 * 60 * 60 * 1000,
-    updatedAt: Date.now() - 5 * 24 * 60 * 60 * 1000,
-    clickCount: 342
-  },
-  {
-    id: 'link-4',
-    userId: 'user-default',
-    shortCode: 'expired-next',
-    longUrl: 'https://nextjs.org/docs',
-    customAlias: 'expired-next',
-    isActive: true,
-    isOneTime: false,
-    expiresAt: Date.now() - 1 * 24 * 60 * 60 * 1000, // Expired yesterday
-    createdAt: Date.now() - 4 * 24 * 60 * 60 * 1000,
-    updatedAt: Date.now() - 4 * 24 * 60 * 60 * 1000,
-    clickCount: 98
-  },
-  {
-    id: 'link-5',
-    userId: 'user-default',
-    shortCode: 'stripe-pay',
-    longUrl: 'https://stripe.com',
-    customAlias: 'stripe-pay',
-    isActive: true,
-    isOneTime: false,
-    password: 'securePassword123',
-    expiresAt: null,
-    createdAt: Date.now() - 1 * 24 * 60 * 60 * 1000,
-    updatedAt: Date.now() - 1 * 24 * 60 * 60 * 1000,
-    clickCount: 12
-  }
-];
-
-const mockSeedClicks = generateSeedClicks(initialMockLinks);
+const emptyLinks: Link[] = [];
+const emptyClicks: ClickLog[] = [];
 
 export const useSnapStore = create<SnapStore>((set, get) => {
   // Client-side initialization fallback
@@ -302,27 +186,11 @@ export const useSnapStore = create<SnapStore>((set, get) => {
   };
 
   // Build Store State
-  const initialLinks = getLocalStorage<Link[]>('snap-links', initialMockLinks);
-  const initialClicks = getLocalStorage<ClickLog[]>('snap-clicks', mockSeedClicks);
+  const initialLinks = getLocalStorage<Link[]>('snap-links', emptyLinks);
+  const initialClicks = getLocalStorage<ClickLog[]>('snap-clicks', emptyClicks);
   const initialUser = getLocalStorage<User | null>('snap-user', null);
-  const initialKeys = getLocalStorage<ApiKey[]>('snap-apikeys', [
-    {
-      id: 'key-1',
-      userId: 'user-default',
-      name: 'Production Server Core',
-      keyHash: FALLBACK_API_KEY || 'su_dev_bootstrap_key',
-      createdAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
-      lastUsedAt: Date.now() - 2 * 60 * 60 * 1000
-    }
-  ]);
-  const initialReports = getLocalStorage('snap-reports', [
-    {
-      id: 'rep-1',
-      linkId: 'link-4',
-      reason: 'Phishing attempt on NextJS replica',
-      reportedAt: Date.now() - 3 * 24 * 60 * 60 * 1000
-    }
-  ]);
+  const initialKeys = getLocalStorage<ApiKey[]>('snap-apikeys', []);
+  const initialReports = getLocalStorage('snap-reports', []);
 
   return {
     user: initialUser,
@@ -633,20 +501,15 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     },
 
     reportLink: async (shortCode, reason) => {
-      const link = get().links.find(l => l.shortCode === shortCode);
-      if (!link) return false;
-
-      const newReport = {
-        id: `rep-${Math.random().toString(36).substr(2, 9)}`,
-        linkId: link.id,
-        reason,
-        reportedAt: Date.now(),
-      };
-
-      const updated = [newReport, ...get().reportedLinks];
-      set({ reportedLinks: updated });
-      setLocalStorage('snap-reports', updated);
-      return true;
+      try {
+        await apiFetch('/api/v1/links/report', {
+          method: 'POST',
+          body: JSON.stringify({ shortCode, reason }),
+        });
+        return true;
+      } catch {
+        return false;
+      }
     },
 
     createApiKey: async (name) => {
