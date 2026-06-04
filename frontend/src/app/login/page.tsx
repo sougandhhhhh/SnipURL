@@ -18,6 +18,8 @@ function AuthContent() {
   useEffect(() => {
     if (searchParams.get('tab') === 'register') setChoice('register');
     else if (searchParams.get('tab') === 'login') setChoice('login');
+    const err = searchParams.get('error');
+    if (err) setError(err);
   }, [searchParams]);
 
   useEffect(() => {

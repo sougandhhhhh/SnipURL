@@ -13,7 +13,6 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Handle PKCE flow (code in query params) or implicit flow (tokens in hash)
         const searchParams = new URLSearchParams(window.location.search);
         const code = searchParams.get('code');
         const hash = window.location.hash.substring(1);
@@ -22,25 +21,28 @@ export default function AuthCallback() {
         const refreshToken = params.get('refresh_token');
 
         if (code) {
-          await supabase.auth.exchangeCodeForSession(code);
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw new Error('Session exchange failed: ' + error.message);
         } else if (accessToken) {
-          await supabase.auth.setSession({
+          const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken || '',
           });
+          if (error) throw new Error('Session set failed: ' + error.message);
         }
 
-        // Now get the session
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw new Error('Get session failed: ' + sessionError.message);
+
         if (session?.user) {
           setStatus('Signing in...');
           await syncSupabaseUser(session.user);
           router.push('/');
         } else {
-          router.push('/login');
+          router.push('/login?error=No%20session%20found');
         }
-      } catch {
-        router.push('/login');
+      } catch (err: any) {
+        router.push('/login?error=' + encodeURIComponent(err?.message || 'Authentication failed'));
       }
     };
     handleCallback();
