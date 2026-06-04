@@ -69,9 +69,15 @@ export default function LandingPage() {
   const [copied, setCopied] = useState(false);
   const [ghostKey, setGhostKey] = useState(0);
   const [origin, setOrigin] = useState('');
+  const [appUrl, setAppUrl] = useState('');
 
   useEffect(() => {
     setOrigin((process.env.NEXT_PUBLIC_DISPLAY_DOMAIN || window.location.origin).replace(/\/+$/, '').trim());
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const resolvedAppUrl = isLocal
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_APP_URL || window.location.origin);
+    setAppUrl(resolvedAppUrl.replace(/\/+$/, ''));
   }, []);
 
   const handleShorten = async (e: React.FormEvent) => {
@@ -153,7 +159,7 @@ export default function LandingPage() {
             ) : (
               <div className="pt-2">
                 <Link
-                  href={`${(process.env.NEXT_PUBLIC_APP_URL || origin).replace(/\/+$/, '')}/login`}
+                  href={`${appUrl}/login`}
                   className="btn-ghost text-sm py-3 px-8"
                 >
                   Sign In / Sign Up
@@ -238,22 +244,34 @@ export default function LandingPage() {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div className="space-y-1">
-                  <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 px-1">Alias</span>
+                  <div className="flex flex-col px-1">
+                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30">Alias</span>
+                    <span className="block font-mono text-[7px] tracking-[0.1em] text-ghost-white/20">Set a custom short code</span>
+                  </div>
                   <input type="text" value={customAlias} onChange={e => setCustomAlias(e.target.value)}
                     placeholder="custom-name" className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
                 </div>
                 <div className="space-y-1">
-                  <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 px-1">Protect</span>
+                  <div className="flex flex-col px-1">
+                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30">Protect</span>
+                    <span className="block font-mono text-[7px] tracking-[0.1em] text-ghost-white/20">Password-protect your link</span>
+                  </div>
                   <input type="password" value={password} onChange={e => setPassword(e.target.value)}
                     placeholder="&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;" className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
                 </div>
                 <div className="space-y-1">
-                  <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 px-1">Expire</span>
+                  <div className="flex flex-col px-1">
+                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30">Expire</span>
+                    <span className="block font-mono text-[7px] tracking-[0.1em] text-ghost-white/20">Set an auto-expire date</span>
+                  </div>
                   <input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)}
                     className="w-full h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 text-xs text-ghost-white focus:border-ecto-green/40 focus:outline-none transition-colors font-body [color-scheme:dark]" />
                 </div>
                 <div className="space-y-1">
-                  <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30 px-1">One-time</span>
+                  <div className="flex flex-col px-1">
+                    <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30">One-time</span>
+                    <span className="block font-mono text-[7px] tracking-[0.1em] text-ghost-white/20">Self-destructs after first visit</span>
+                  </div>
                   <label className="flex items-center justify-center gap-2 h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 cursor-pointer hover:border-ecto-green/40 transition-colors">
                     <div className={`relative w-8 h-4 rounded-full transition-colors ${isOneTime ? 'bg-ecto-green' : 'bg-white/10'}`}>
                       <input type="checkbox" checked={isOneTime} onChange={e => setIsOneTime(e.target.checked)} className="sr-only" />
