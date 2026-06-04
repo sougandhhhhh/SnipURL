@@ -270,7 +270,7 @@ export default function LandingPage() {
                 <div className="space-y-1">
                   <div className="flex flex-col px-1">
                     <span className="block font-mono text-[9px] tracking-[0.1em] uppercase text-ghost-white/30">One-time</span>
-                    <span className="block font-mono text-[7px] tracking-[0.1em] text-ghost-white/20">Self-destructs after first visit</span>
+                    <span className="block font-mono text-[7px] tracking-[0.1em] text-ghost-white/20">Expires after first visit</span>
                   </div>
                   <label className="flex items-center justify-center gap-2 h-10 rounded-full bg-white/[0.04] border border-glass-border px-4 cursor-pointer hover:border-ecto-green/40 transition-colors">
                     <div className={`relative w-8 h-4 rounded-full transition-colors ${isOneTime ? 'bg-ecto-green' : 'bg-white/10'}`}>
