@@ -295,14 +295,15 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     },
 
     restoreSession: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const storedKeys = getLocalStorage<ApiKey[]>('snap-apikeys', []);
-        if (storedKeys.length > 0) {
-          await get().syncSupabaseUser(session.user);
-        } else {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
           await get().syncSupabaseUser(session.user);
         }
+      } catch (err: any) {
+        // Non-fatal: silently fail so the app still loads for unauthenticated users
+        console.error('restoreSession error:', err?.message || err);
+        set({ loading: false });
       }
     },
 

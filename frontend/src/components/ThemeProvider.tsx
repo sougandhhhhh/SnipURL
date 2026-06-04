@@ -117,11 +117,17 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get('code');
-    if (code && !window.location.pathname.startsWith('/auth/callback')) {
-      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const isCallbackPage = window.location.pathname.startsWith('/auth/callback');
+
+    // The /auth/callback page handles its own session exchange — don't interfere
+    if (isCallbackPage) return;
+
+    if (code) {
+      // A stray ?code= landed on a non-callback page — forward it properly
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const appUrl = isLocal
         ? window.location.origin
-        : (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_APP_URL : undefined) || window.location.origin;
+        : (process.env.NEXT_PUBLIC_APP_URL || window.location.origin);
       const cleanAppUrl = appUrl.replace(/\/+$/, '');
       if (window.location.origin !== cleanAppUrl) {
         window.location.href = `${cleanAppUrl}/auth/callback?code=${code}`;
@@ -130,6 +136,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
       }
       return;
     }
+
     restoreSession();
   }, [restoreSession]);
 
