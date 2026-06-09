@@ -29,6 +29,7 @@ export default function SettingsPage() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -57,6 +58,10 @@ export default function SettingsPage() {
     if (!authResolved) return;
     if (!user) { router.push('/login'); return; }
     if (user.dateOfBirth) setDobInput(user.dateOfBirth);
+    supabase.auth.getUser().then(({ data }) => {
+      const identities = data.user?.identities ?? [];
+      setIsGoogleUser(identities.some(i => i.provider === 'google'));
+    }).catch(() => {});
   }, [mounted, authResolved, user, router]);
 
   if (!mounted || !authResolved || !user) return null;
@@ -251,7 +256,7 @@ export default function SettingsPage() {
             </h3>
           </div>
 
-          {!user.passwordSet && (
+          {!user.passwordSet && isGoogleUser && (
             <p className="font-body text-xs text-ghost-white/40">Set a password to enable email sign-in.</p>
           )}
 
@@ -263,7 +268,7 @@ export default function SettingsPage() {
               <div className="rounded-xl bg-ecto-green/5 border border-ecto-green/20 p-3 font-mono text-[10px] text-ecto-green/80 text-center">{passSuccess}</div>
             )}
 
-            {user.passwordSet && (
+            {(user.passwordSet) && (
               <div className="relative">
                 <input type={showCurrent ? 'text' : 'password'} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
                   placeholder="Current password"
