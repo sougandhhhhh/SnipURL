@@ -8,7 +8,7 @@ import { User, Mail, Calendar, Lock, Eye, EyeOff, X as XIcon } from 'lucide-reac
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, authResolved, apiFetch } = useSnapStore();
+  const { user, authResolved, apiFetch, syncSupabaseUser } = useSnapStore();
   const [mounted, setMounted] = useState(false);
 
   const [editingName, setEditingName] = useState(false);
@@ -32,6 +32,26 @@ export default function SettingsPage() {
 
   useEffect(() => { setMounted(true); }, []);
 
+  const saveProfileWithRetry = async (payload: Record<string, string | boolean | null>) => {
+    const saveProfile = () => apiFetch('/api/v1/user/profile', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+
+    try {
+      return await saveProfile();
+    } catch (err: any) {
+      const message = String(err?.message || err || '');
+      if (!message.includes('Unauthorized: Invalid API Key')) throw err;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw err;
+
+      await syncSupabaseUser(session.user);
+      return await saveProfile();
+    }
+  };
+
   useEffect(() => {
     if (!mounted) return;
     if (!authResolved) return;
@@ -48,10 +68,7 @@ export default function SettingsPage() {
     setNameSaving(true);
     try {
       await supabase.auth.updateUser({ data: { name: trimmed } });
-      const result = await apiFetch('/api/v1/user/profile', {
-        method: 'PUT',
-        body: JSON.stringify({ name: trimmed }),
-      });
+      const result = await saveProfileWithRetry({ name: trimmed });
       if (result.user) {
         const updatedUser = { ...user, name: result.user.name };
         useSnapStore.setState({ user: updatedUser });
@@ -80,10 +97,7 @@ export default function SettingsPage() {
     setDobSaving(true);
     setDobMessage('');
     try {
-      const result = await apiFetch('/api/v1/user/profile', {
-        method: 'PUT',
-        body: JSON.stringify({ dateOfBirth: dobInput || null }),
-      });
+      const result = await saveProfileWithRetry({ dateOfBirth: dobInput || null });
       if (result.user) {
         const updatedUser = { ...user, dateOfBirth: result.user.dateOfBirth };
         useSnapStore.setState({ user: updatedUser });
@@ -132,10 +146,7 @@ export default function SettingsPage() {
 
     // Mark password as set in our backend
     try {
-      const result = await apiFetch('/api/v1/user/profile', {
-        method: 'PUT',
-        body: JSON.stringify({ passwordSet: true }),
-      });
+      const result = await saveProfileWithRetry({ passwordSet: true });
       if (result.user) {
         const updatedUser = { ...user, passwordSet: true };
         useSnapStore.setState({ user: updatedUser });
