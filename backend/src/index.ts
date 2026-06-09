@@ -861,6 +861,30 @@ app.post('/api/v1/auth/supabase', async (c) => {
         .limit(1);
 
       if (userByEmail) {
+        // Update foreign keys first to avoid constraint violation on user ID update
+        try {
+          await db.update(schema.apiKeys)
+            .set({ userId: supabaseId })
+            .where(eq(schema.apiKeys.userId, userByEmail.id));
+        } catch (e) {
+          console.error('Failed to update apiKeys userId:', e);
+        }
+
+        try {
+          await db.update(schema.links)
+            .set({ userId: supabaseId })
+            .where(eq(schema.links.userId, userByEmail.id));
+        } catch (e) {
+          console.error('Failed to update links userId:', e);
+        }
+
+        try {
+          await db.delete(schema.sessions)
+            .where(eq(schema.sessions.userId, userByEmail.id));
+        } catch (e) {
+          console.error('Failed to clean up sessions:', e);
+        }
+
         // Reclaim the existing account by updating the ID to match this Supabase ID
         await db.update(schema.users)
           .set({ id: supabaseId, email })
@@ -905,7 +929,8 @@ app.post('/api/v1/auth/supabase', async (c) => {
     }
 
     if (existingKey) {
-      const rawKey = rawKeyInput || `su_live_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+      // If the incoming key did not match, we MUST generate a brand new key to avoid reusing an invalid or colliding key.
+      const rawKey = `su_live_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
       const hashedKey = await hashString(rawKey);
       await db.update(schema.apiKeys)
         .set({ keyHash: hashedKey, lastUsedAt: null })

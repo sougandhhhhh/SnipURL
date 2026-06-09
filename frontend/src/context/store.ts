@@ -145,8 +145,15 @@ export const useSnapStore = create<SnapStore>((set, get) => {
 
   const getApiKeyHeader = (): string | undefined => {
     if (!isClient) return undefined;
-    const stored = localStorage.getItem('snap-service-key');
-    if (stored) return stored;
+    let stored = localStorage.getItem('snap-service-key');
+    if (stored) {
+      if (stored.startsWith('"') && stored.endsWith('"')) {
+        try {
+          stored = JSON.parse(stored);
+        } catch {}
+      }
+      return stored || undefined;
+    }
     const keys = get()?.apiKeys ?? [];
     const candidate = keys.length > 0 ? keys[0]?.keyHash : undefined;
     if (candidate && candidate.startsWith('su_live_')) return candidate;
@@ -269,7 +276,13 @@ export const useSnapStore = create<SnapStore>((set, get) => {
             supabaseId: supabaseUser.id,
             email: supabaseUser.email,
             name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-            existingRawKey: isClient ? localStorage.getItem('snap-service-key') : null,
+            existingRawKey: isClient ? (() => {
+              let stored = localStorage.getItem('snap-service-key');
+              if (stored && stored.startsWith('"') && stored.endsWith('"')) {
+                try { stored = JSON.parse(stored); } catch {}
+              }
+              return stored;
+            })() : null,
           }),
         });
 
@@ -289,7 +302,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
         setLocalStorage('snap-user', user);
         setLocalStorage('snap-apikeys', [{ ...apiKey, keyHash: rawKey || apiKey.keyHash }]);
         if (rawKey) {
-          setLocalStorage('snap-service-key', rawKey);
+          localStorage.setItem('snap-service-key', rawKey);
         } else if (isClient) {
           localStorage.removeItem('snap-service-key');
         }
@@ -551,7 +564,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
         set({ apiKeys: updated, loading: false });
         setLocalStorage('snap-apikeys', updated);
         if (rawKey) {
-          setLocalStorage('snap-service-key', rawKey);
+          localStorage.setItem('snap-service-key', rawKey);
         }
         return newKey;
       } catch (error) {
@@ -571,7 +584,10 @@ export const useSnapStore = create<SnapStore>((set, get) => {
         set({ apiKeys: updated, loading: false });
         setLocalStorage('snap-apikeys', updated);
 
-        const currentKey = localStorage.getItem('snap-service-key');
+        let currentKey = localStorage.getItem('snap-service-key');
+        if (currentKey && currentKey.startsWith('"') && currentKey.endsWith('"')) {
+          try { currentKey = JSON.parse(currentKey); } catch {}
+        }
         const revoked = get().apiKeys.find(k => k.id === id);
         if (revoked?.keyHash === currentKey) {
           localStorage.removeItem('snap-service-key');
