@@ -884,10 +884,17 @@ app.post('/api/v1/auth/supabase', async (c) => {
       .limit(1);
 
     if (existingKey) {
+      const rawKey = `su_live_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+      const hashedKey = await hashString(rawKey);
+      await db.update(schema.apiKeys)
+        .set({ keyHash: hashedKey, lastUsedAt: null })
+        .where(eq(schema.apiKeys.id, existingKey.id));
+
       return c.json({
         success: true,
         user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, dateOfBirth: existingUser.dateOfBirth, passwordSet: existingUser.passwordHash !== null, role: existingUser.role || 'user' },
-        apiKey: { id: existingKey.id, userId: existingKey.userId, name: existingKey.name, keyHash: existingKey.keyHash, createdAt: existingKey.createdAt, lastUsedAt: existingKey.lastUsedAt },
+        apiKey: { ...existingKey, keyHash: hashedKey, lastUsedAt: null },
+        rawKey,
       });
     }
 

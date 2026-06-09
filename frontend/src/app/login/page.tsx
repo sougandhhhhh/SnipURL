@@ -23,7 +23,7 @@ function AuthContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (authResolved && user) router.replace('/dashboard');
+    if (authResolved && user) router.replace('/');
   }, [authResolved, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +33,7 @@ function AuthContent() {
     if (choice === 'register' && !name) { setError('Name required.'); return; }
     try {
       const success = choice === 'login' ? await login(email, password) : await register(email, password, name);
-      if (success) router.replace('/dashboard');
+      if (success) router.replace('/');
     } catch (err: any) {
       setError(err.message || 'Authentication error.');
     }
