@@ -118,12 +118,11 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get('code');
     const isCallbackPage = window.location.pathname.startsWith('/auth/callback');
+    const isResetPage = window.location.pathname.startsWith('/auth/reset-password');
 
-    // The /auth/callback page handles its own session exchange — don't interfere
-    if (isCallbackPage) return;
+    if (isCallbackPage || isResetPage) return;
 
     if (code) {
-      // A stray ?code= landed on a non-callback page — forward it properly
       const callbackUrl = new URL('/auth/callback', window.location.origin);
       callbackUrl.searchParams.set('code', code);
       window.location.replace(callbackUrl.toString());

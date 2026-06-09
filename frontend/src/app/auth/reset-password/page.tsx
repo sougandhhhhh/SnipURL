@@ -1,20 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase, initialUrlHash } from '../../../lib/supabase';
+import { useState, useEffect, Suspense, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '../../../lib/supabase';
 
-function parseHash(hash: string): { accessToken: string; refreshToken: string } | null {
-  const h = hash.replace(/^#/, '');
-  const params = new URLSearchParams(h);
-  const accessToken = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-  if (accessToken && refreshToken) return { accessToken, refreshToken };
-  return null;
-}
-
-export default function ResetPasswordPage() {
+function ResetContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
@@ -22,34 +14,31 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [checking, setChecking] = useState(true);
+  const done = useRef(false);
 
   useEffect(() => {
-    if (!initialUrlHash || !initialUrlHash.includes('access_token')) {
-      setError('Invalid or expired reset link. Request a new one.');
-      setChecking(false);
-      return;
-    }
+    if (done.current) return;
+    done.current = true;
 
-    const tokens = parseHash(initialUrlHash);
-    if (!tokens) {
-      setError('Invalid or expired reset link. Request a new one.');
-      setChecking(false);
-      return;
-    }
+    (async () => {
+      const code = searchParams.get('code');
 
-    supabase.auth.setSession({
-      access_token: tokens.accessToken,
-      refresh_token: tokens.refreshToken,
-    }).then(({ data, error: sessionError }) => {
-      if (sessionError || !data.session) {
-        setError('Invalid or expired reset link. Request a new one.');
-        setChecking(false);
-      } else {
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) {
+          setError(exchangeError.message);
+          setChecking(false);
+          return;
+        }
         setReady(true);
         setChecking(false);
+        return;
       }
-    });
-  }, []);
+
+      setError('Invalid or expired reset link. Request a new one.');
+      setChecking(false);
+    })();
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,5 +95,17 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-ecto-green/50 animate-pulse">Verifying...</div>
+      </div>
+    }>
+      <ResetContent />
+    </Suspense>
   );
 }
