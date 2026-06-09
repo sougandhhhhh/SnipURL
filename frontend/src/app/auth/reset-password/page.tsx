@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../lib/supabase';
+import { supabase, initialUrlHash } from '../../../lib/supabase';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -18,26 +18,31 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     let cancelled = false;
 
-    const poll = async () => {
-      for (let i = 0; i < 15; i++) {
-        if (cancelled) return;
-        const { data } = await supabase.auth.getSession();
-        if (data.session) {
-          if (!handled.current) {
-            handled.current = true;
-            setReady(true);
-            setChecking(false);
+    if (initialUrlHash && initialUrlHash.includes('access_token')) {
+      const poll = async () => {
+        for (let i = 0; i < 15; i++) {
+          if (cancelled) return;
+          const { data } = await supabase.auth.getSession();
+          if (data.session) {
+            if (!handled.current) {
+              handled.current = true;
+              setReady(true);
+              setChecking(false);
+            }
+            return;
           }
-          return;
+          await new Promise(r => setTimeout(r, 400));
         }
-        await new Promise(r => setTimeout(r, 400));
-      }
-      if (!cancelled && !handled.current) {
-        setError('Invalid or expired reset link. Request a new one.');
-        setChecking(false);
-      }
-    };
-    poll();
+        if (!cancelled && !handled.current) {
+          setError('Invalid or expired reset link. Request a new one.');
+          setChecking(false);
+        }
+      };
+      poll();
+    } else {
+      setError('Invalid or expired reset link. Request a new one.');
+      setChecking(false);
+    }
 
     return () => { cancelled = true; };
   }, []);
