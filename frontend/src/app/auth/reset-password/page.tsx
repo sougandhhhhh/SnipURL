@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 
@@ -11,15 +11,35 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const handled = useRef(false);
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') return;
-    });
-    const hash = window.location.hash;
-    if (!hash || !hash.includes('access_token')) {
-      setError('Invalid or expired reset link. Request a new one.');
-    }
+    let cancelled = false;
+
+    const poll = async () => {
+      for (let i = 0; i < 15; i++) {
+        if (cancelled) return;
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          if (!handled.current) {
+            handled.current = true;
+            setReady(true);
+            setChecking(false);
+          }
+          return;
+        }
+        await new Promise(r => setTimeout(r, 400));
+      }
+      if (!cancelled && !handled.current) {
+        setError('Invalid or expired reset link. Request a new one.');
+        setChecking(false);
+      }
+    };
+    poll();
+
+    return () => { cancelled = true; };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +62,9 @@ export default function ResetPasswordPage() {
         <div className="text-center space-y-2 mb-8">
           <img src="/logo.svg" alt="SnipURL" width="56" height="56" className="mx-auto mb-4" />
           <h2 className="font-display text-xl tracking-[0.05em] text-ghost-white">Reset Password</h2>
-          <p className="font-body text-sm text-ghost-white/40">Enter your new password.</p>
+          <p className="font-body text-sm text-ghost-white/40">
+            {checking ? 'Verifying link...' : ready ? 'Enter your new password.' : ''}
+          </p>
         </div>
 
         {success ? (
@@ -50,6 +72,12 @@ export default function ResetPasswordPage() {
             <div className="rounded-xl bg-ecto-green/5 border border-ecto-green/20 p-3 font-mono text-[10px] text-ecto-green/80">
               Password updated successfully! Redirecting to login...
             </div>
+          </div>
+        ) : checking ? (
+          <div className="text-center font-mono text-[10px] tracking-[0.2em] uppercase text-ecto-green/50 animate-pulse">Verifying...</div>
+        ) : !ready ? (
+          <div className="text-center space-y-4">
+            <div className="rounded-xl bg-red-400/5 border border-red-400/20 p-3 font-mono text-[10px] text-red-400/80">{error}</div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
