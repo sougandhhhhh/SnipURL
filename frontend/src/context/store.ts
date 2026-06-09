@@ -148,7 +148,8 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     const stored = localStorage.getItem('snap-service-key');
     if (stored) return stored;
     const keys = get()?.apiKeys ?? [];
-    if (keys.length > 0 && keys[0]?.keyHash) return keys[0].keyHash;
+    const candidate = keys.length > 0 ? keys[0]?.keyHash : undefined;
+    if (candidate && candidate.startsWith('su_live_')) return candidate;
     if (FALLBACK_API_KEY) return FALLBACK_API_KEY;
     return undefined;
   };
@@ -268,6 +269,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
             supabaseId: supabaseUser.id,
             email: supabaseUser.email,
             name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+            existingRawKey: isClient ? localStorage.getItem('snap-service-key') : null,
           }),
         });
 

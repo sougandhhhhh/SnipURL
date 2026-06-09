@@ -837,7 +837,7 @@ app.get('/api/v1/analytics/:linkId', authenticateApiKey, async (c) => {
 app.post('/api/v1/auth/supabase', async (c) => {
   try {
     const body = await c.req.json();
-    const { supabaseId, email, name } = body;
+    const { supabaseId, email, name, existingRawKey } = body;
     if (!supabaseId || !email) {
       return c.json({ error: 'supabaseId and email required' }, 400);
     }
@@ -883,8 +883,29 @@ app.post('/api/v1/auth/supabase', async (c) => {
       .where(eq(schema.apiKeys.userId, supabaseId))
       .limit(1);
 
+    const rawKeyInput = typeof existingRawKey === 'string' && existingRawKey.startsWith('su_live_')
+      ? existingRawKey.trim()
+      : '';
+    if (rawKeyInput) {
+      const hashedIncoming = await hashString(rawKeyInput);
+      const [matchedKey] = await db
+        .select()
+        .from(schema.apiKeys)
+        .where(and(eq(schema.apiKeys.userId, supabaseId), eq(schema.apiKeys.keyHash, hashedIncoming)))
+        .limit(1);
+
+      if (matchedKey) {
+        return c.json({
+          success: true,
+          user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, dateOfBirth: existingUser.dateOfBirth ?? null, passwordSet: existingUser.passwordHash !== null, role: existingUser.role || 'user' },
+          apiKey: matchedKey,
+          rawKey: rawKeyInput,
+        });
+      }
+    }
+
     if (existingKey) {
-      const rawKey = `su_live_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+      const rawKey = rawKeyInput || `su_live_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
       const hashedKey = await hashString(rawKey);
       await db.update(schema.apiKeys)
         .set({ keyHash: hashedKey, lastUsedAt: null })
@@ -892,7 +913,7 @@ app.post('/api/v1/auth/supabase', async (c) => {
 
       return c.json({
         success: true,
-        user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, dateOfBirth: existingUser.dateOfBirth, passwordSet: existingUser.passwordHash !== null, role: existingUser.role || 'user' },
+        user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, dateOfBirth: existingUser.dateOfBirth ?? null, passwordSet: existingUser.passwordHash !== null, role: existingUser.role || 'user' },
         apiKey: { ...existingKey, keyHash: hashedKey, lastUsedAt: null },
         rawKey,
       });
