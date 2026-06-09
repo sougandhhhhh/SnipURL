@@ -241,6 +241,18 @@ export const useSnapStore = create<SnapStore>((set, get) => {
       if (error) { set({ loading: false }); throw new Error(error.message); }
       if (!data.user) { set({ loading: false }); throw new Error('Signup failed'); }
       await get().syncSupabaseUser(data.user);
+      try {
+        await get().apiFetch('/api/v1/user/profile', {
+          method: 'PUT',
+          body: JSON.stringify({ passwordSet: true }),
+        });
+        const currentUser = get().user;
+        if (currentUser) {
+          const updated = { ...currentUser, passwordSet: true };
+          set({ user: updated });
+          setLocalStorage('snap-user', updated);
+        }
+      } catch {}
       return true;
     },
 

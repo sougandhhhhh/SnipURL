@@ -252,7 +252,7 @@ export default function SettingsPage() {
           </div>
 
           {!user.passwordSet && (
-            <p className="font-body text-xs text-ghost-white/40">You signed up with Google. Set a password to enable email sign-in.</p>
+            <p className="font-body text-xs text-ghost-white/40">Set a password to enable email sign-in.</p>
           )}
 
           <form onSubmit={handlePasswordChange} className="space-y-4">
