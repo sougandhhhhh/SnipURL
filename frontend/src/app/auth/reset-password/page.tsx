@@ -4,6 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, initialUrlHash } from '../../../lib/supabase';
 
+function parseHash(hash: string): { accessToken: string; refreshToken: string } | null {
+  const h = hash.replace(/^#/, '');
+  const params = new URLSearchParams(h);
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (accessToken && refreshToken) return { accessToken, refreshToken };
+  return null;
+}
+
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState('');
@@ -13,38 +22,33 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [checking, setChecking] = useState(true);
-  const handled = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
-
-    if (initialUrlHash && initialUrlHash.includes('access_token')) {
-      const poll = async () => {
-        for (let i = 0; i < 15; i++) {
-          if (cancelled) return;
-          const { data } = await supabase.auth.getSession();
-          if (data.session) {
-            if (!handled.current) {
-              handled.current = true;
-              setReady(true);
-              setChecking(false);
-            }
-            return;
-          }
-          await new Promise(r => setTimeout(r, 400));
-        }
-        if (!cancelled && !handled.current) {
-          setError('Invalid or expired reset link. Request a new one.');
-          setChecking(false);
-        }
-      };
-      poll();
-    } else {
+    if (!initialUrlHash || !initialUrlHash.includes('access_token')) {
       setError('Invalid or expired reset link. Request a new one.');
       setChecking(false);
+      return;
     }
 
-    return () => { cancelled = true; };
+    const tokens = parseHash(initialUrlHash);
+    if (!tokens) {
+      setError('Invalid or expired reset link. Request a new one.');
+      setChecking(false);
+      return;
+    }
+
+    supabase.auth.setSession({
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken,
+    }).then(({ data, error: sessionError }) => {
+      if (sessionError || !data.session) {
+        setError('Invalid or expired reset link. Request a new one.');
+        setChecking(false);
+      } else {
+        setReady(true);
+        setChecking(false);
+      }
+    });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
