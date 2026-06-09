@@ -863,17 +863,17 @@ app.post('/api/v1/auth/supabase', async (c) => {
       if (userByEmail) {
         // Reclaim the existing account by updating the ID to match this Supabase ID
         await db.update(schema.users)
-          .set({ id: supabaseId, name: displayName })
+          .set({ id: supabaseId, email })
           .where(eq(schema.users.id, userByEmail.id));
-        existingUser = { ...userByEmail, id: supabaseId, name: displayName };
+        existingUser = { ...userByEmail, id: supabaseId, email };
       } else {
-        const newUser = { id: supabaseId, email, name: displayName, passwordHash: null, role: 'user', createdAt: now };
+        const newUser = { id: supabaseId, email, name: displayName, passwordHash: null, role: 'user', createdAt: now, dateOfBirth: null };
         await db.insert(schema.users).values(newUser);
         existingUser = newUser as any;
       }
     } else {
       await db.update(schema.users)
-        .set({ email, name: displayName })
+        .set({ email })
         .where(eq(schema.users.id, supabaseId));
     }
 
@@ -913,7 +913,7 @@ app.post('/api/v1/auth/supabase', async (c) => {
 
     return c.json({
       success: true,
-      user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, role: existingUser.role || 'user' },
+      user: { id: existingUser.id, email: existingUser.email, name: existingUser.name, dateOfBirth: existingUser.dateOfBirth ?? null, passwordSet: existingUser.passwordHash !== null, role: existingUser.role || 'user' },
       apiKey: newKey,
       rawKey,
     }, 201);
