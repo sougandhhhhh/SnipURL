@@ -219,6 +219,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
       if (isClient) {
         localStorage.removeItem('snap-user');
         localStorage.removeItem('snap-apikeys');
+        localStorage.removeItem('snap-service-key');
       }
     },
 
@@ -257,7 +258,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
         role: 'user',
       };
 
-      set({ user: fallbackUser, loading: false, authResolved: true });
+      set({ user: fallbackUser, loading: false, authResolved: false });
       setLocalStorage('snap-user', fallbackUser);
 
       try {
@@ -287,6 +288,8 @@ export const useSnapStore = create<SnapStore>((set, get) => {
         setLocalStorage('snap-apikeys', [{ ...apiKey, keyHash: rawKey || apiKey.keyHash }]);
         if (rawKey) {
           setLocalStorage('snap-service-key', rawKey);
+        } else if (isClient) {
+          localStorage.removeItem('snap-service-key');
         }
 
         // Claim any pending unauthenticated link

@@ -8,7 +8,7 @@ import { User, Mail, Calendar, Lock, Eye, EyeOff, X as XIcon } from 'lucide-reac
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, apiFetch } = useSnapStore();
+  const { user, authResolved, apiFetch } = useSnapStore();
   const [mounted, setMounted] = useState(false);
 
   const [editingName, setEditingName] = useState(false);
@@ -34,11 +34,12 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!mounted) return;
+    if (!authResolved) return;
     if (!user) { router.push('/login'); return; }
     if (user.dateOfBirth) setDobInput(user.dateOfBirth);
-  }, [mounted, user, router]);
+  }, [mounted, authResolved, user, router]);
 
-  if (!user) return null;
+  if (!mounted || !authResolved || !user) return null;
 
   const handleSaveName = async () => {
     const trimmed = nameInput.trim();
