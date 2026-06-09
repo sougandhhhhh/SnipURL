@@ -3,17 +3,19 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSnapStore } from '../../context/store';
+import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
 
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, register, signInWithGoogle, loading, user, authResolved } = useSnapStore();
-  const [choice, setChoice] = useState<'pick' | 'login' | 'register'>('pick');
+  const [choice, setChoice] = useState<'pick' | 'login' | 'register' | 'forgot'>('pick');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('tab') === 'register') setChoice('register');
@@ -29,6 +31,7 @@ function AuthContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (choice === 'forgot') return handleForgotPassword(e);
     if (!email || !password) { setError('All fields required.'); return; }
     if (choice === 'register' && !name) { setError('Name required.'); return; }
     try {
@@ -36,6 +39,23 @@ function AuthContent() {
       if (success) router.replace('/');
     } catch (err: any) {
       setError(err.message || 'Authentication error.');
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setResetSent(false);
+    if (!email) { setError('Enter your email address.'); return; }
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin.replace(/\/+$/, '') : '';
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${origin}/auth/reset-password`,
+      });
+      if (error) throw new Error(error.message);
+      setResetSent(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email.');
     }
   };
 
@@ -101,6 +121,12 @@ function AuthContent() {
                 </div>
               )}
 
+              {resetSent && (
+                <div className="rounded-xl bg-ecto-green/5 border border-ecto-green/20 p-3 font-mono text-[10px] text-ecto-green/80 text-center">
+                  Reset link sent! Check your email.
+                </div>
+              )}
+
               {choice === 'register' && (
                 <input type="text" required value={name} onChange={e => setName(e.target.value)}
                   placeholder="Name"
@@ -111,13 +137,33 @@ function AuthContent() {
                 placeholder="Email"
                 className="w-full h-11 rounded-full bg-white/[0.04] border border-glass-border px-5 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
 
-              <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="Password"
-                className="w-full h-11 rounded-full bg-white/[0.04] border border-glass-border px-5 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
+              {choice === 'forgot' ? (
+                <>
+                  <p className="font-body text-xs text-ghost-white/40 text-center">
+                    Enter your email and we'll send you a reset link.
+                  </p>
+                  <button type="submit" disabled={loading} className="btn-ghost w-full justify-center">
+                    {loading ? 'Sending...' : 'Send Reset Link'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
+                    placeholder="Password"
+                    className="w-full h-11 rounded-full bg-white/[0.04] border border-glass-border px-5 text-sm text-ghost-white placeholder-ghost-white/20 focus:border-ecto-green/40 focus:outline-none transition-colors font-body" />
 
-              <button type="submit" disabled={loading} className="btn-ghost w-full justify-center">
-                {loading ? 'Summoning...' : choice === 'login' ? 'Enter' : 'Register'}
-              </button>
+                  {choice === 'login' && (
+                    <button type="button" onClick={() => { setChoice('forgot'); setError(''); setResetSent(false); setPassword(''); }}
+                      className="bg-transparent border-none font-mono text-[9px] tracking-[0.15em] uppercase text-ecto-green/50 hover:text-ecto-green/80 transition-colors cursor-pointer mx-auto block -mt-2">
+                      Forgot password?
+                    </button>
+                  )}
+
+                  <button type="submit" disabled={loading} className="btn-ghost w-full justify-center">
+                    {loading ? 'Summoning...' : choice === 'login' ? 'Enter' : 'Register'}
+                  </button>
+                </>
+              )}
             </form>
 
             <div className="relative my-5">
