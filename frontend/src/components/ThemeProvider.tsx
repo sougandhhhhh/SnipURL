@@ -124,16 +124,9 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
 
     if (code) {
       // A stray ?code= landed on a non-callback page — forward it properly
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const appUrl = isLocal
-        ? window.location.origin
-        : (process.env.NEXT_PUBLIC_APP_URL || window.location.origin);
-      const cleanAppUrl = appUrl.replace(/\/+$/, '');
-      if (window.location.origin !== cleanAppUrl) {
-        window.location.href = `${cleanAppUrl}/auth/callback?code=${code}`;
-      } else {
-        window.location.replace(`/auth/callback?code=${code}`);
-      }
+      const callbackUrl = new URL('/auth/callback', window.location.origin);
+      callbackUrl.searchParams.set('code', code);
+      window.location.replace(callbackUrl.toString());
       return;
     }
 

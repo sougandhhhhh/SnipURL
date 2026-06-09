@@ -63,7 +63,7 @@ function LinkRow({ link, origin, copiedId, onCopy, onEdit, onQr, onDelete }: {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, links, updateLink, deleteLink, fetchLinks } = useSnapStore();
+  const { user, authResolved, links, updateLink, deleteLink, fetchLinks } = useSnapStore();
 
   const [search, setSearch] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -77,10 +77,11 @@ export default function DashboardPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) { router.push('/login'); return; }
+    if (!authResolved) return;
+    if (!user) { router.replace('/login'); return; }
     setOrigin((process.env.NEXT_PUBLIC_DISPLAY_DOMAIN || window.location.origin).replace(/\/+$/, '').trim());
     fetchLinks();
-  }, [user, router, fetchLinks]);
+  }, [authResolved, user, router, fetchLinks]);
 
   useEffect(() => {
     if (!message) return;
@@ -191,7 +192,7 @@ export default function DashboardPage() {
 
   const displayItems = showAll ? allItems : allItems.slice(0, 10);
 
-  if (!user) return null;
+  if (!authResolved || !user) return null;
 
   return (
     <div className="px-4 sm:px-10 lg:px-16 xl:px-24 pt-14 sm:pt-20 pb-8 sm:pb-16 space-y-8">

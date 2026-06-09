@@ -8,7 +8,7 @@ import Link from 'next/link';
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, register, signInWithGoogle, loading, user } = useSnapStore();
+  const { login, register, signInWithGoogle, loading, user, authResolved } = useSnapStore();
   const [choice, setChoice] = useState<'pick' | 'login' | 'register'>('pick');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,8 +23,8 @@ function AuthContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (user) router.push('/');
-  }, [user, router]);
+    if (authResolved && user) router.replace('/dashboard');
+  }, [authResolved, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +33,7 @@ function AuthContent() {
     if (choice === 'register' && !name) { setError('Name required.'); return; }
     try {
       const success = choice === 'login' ? await login(email, password) : await register(email, password, name);
-      if (success) router.push('/');
+      if (success) router.replace('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Authentication error.');
     }
@@ -46,6 +46,14 @@ function AuthContent() {
       setError(err.message || 'Google sign-in failed.');
     }
   };
+
+  if (!authResolved && !user) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-ecto-green/50 animate-pulse">Summoning...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-16 relative">

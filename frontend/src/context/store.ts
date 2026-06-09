@@ -51,6 +51,7 @@ export interface User {
 
 interface SnapStore {
   user: User | null;
+  authResolved: boolean;
   links: Link[];
   analytics: ClickLog[];
   apiKeys: ApiKey[];
@@ -194,6 +195,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
 
   return {
     user: initialUser,
+    authResolved: false,
     links: initialLinks,
     analytics: initialClicks,
     apiKeys: initialKeys,
@@ -234,13 +236,10 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     },
 
     signInWithGoogle: async () => {
-      const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-      const appUrl = isLocal
-        ? window.location.origin
-        : (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_APP_URL : undefined) || window.location.origin;
+      const origin = typeof window !== 'undefined' ? window.location.origin.replace(/\/+$/, '') : '';
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${appUrl.replace(/\/+$/, '')}/auth/callback` },
+        options: { redirectTo: `${origin}/auth/callback` },
       });
       if (error) throw new Error(error.message);
       if (data?.url) {
@@ -249,6 +248,18 @@ export const useSnapStore = create<SnapStore>((set, get) => {
     },
 
     syncSupabaseUser: async (supabaseUser) => {
+      const fallbackUser: User = {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+        dateOfBirth: null,
+        passwordSet: false,
+        role: 'user',
+      };
+
+      set({ user: fallbackUser, loading: false, authResolved: true });
+      setLocalStorage('snap-user', fallbackUser);
+
       try {
         const result = await apiFetch('/api/v1/auth/supabase', {
           method: 'POST',
@@ -271,7 +282,7 @@ export const useSnapStore = create<SnapStore>((set, get) => {
         const apiKey: ApiKey = result.apiKey;
         const rawKey = result.rawKey;
 
-        set({ user, apiKeys: [apiKey], loading: false });
+        set({ user, apiKeys: [apiKey], loading: false, authResolved: true });
         setLocalStorage('snap-user', user);
         setLocalStorage('snap-apikeys', [{ ...apiKey, keyHash: rawKey || apiKey.keyHash }]);
         if (rawKey) {
@@ -292,8 +303,8 @@ export const useSnapStore = create<SnapStore>((set, get) => {
 
         await get().fetchLinks?.();
       } catch (err: any) {
-        set({ loading: false });
-        throw new Error(err.message || 'Failed to link account');
+        console.error('syncSupabaseUser fallback:', err?.message || err);
+        set({ loading: false, authResolved: true });
       }
     },
 
@@ -307,6 +318,8 @@ export const useSnapStore = create<SnapStore>((set, get) => {
         // Non-fatal: silently fail so the app still loads for unauthenticated users
         console.error('restoreSession error:', err?.message || err);
         set({ loading: false });
+      } finally {
+        set({ authResolved: true });
       }
     },
 
