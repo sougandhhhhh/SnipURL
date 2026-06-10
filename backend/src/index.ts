@@ -8,8 +8,10 @@ import { encodeSequential, validateUrl, isSpamOrMalicious, hashString, constantT
 interface Env {
   DB: D1Database;
   KV: KVNamespace;
-  FRONTEND_URL?: string; // Next.js dashboard URL
-  SERVICE_API_KEY?: string; // Optional fallback API key for bootstrap or local dev
+  FRONTEND_URL?: string;
+  SERVICE_API_KEY?: string;
+  SUPABASE_URL?: string;
+  SUPABASE_SERVICE_KEY?: string;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -968,7 +970,83 @@ app.post('/api/v1/auth/supabase', async (c) => {
   }
 });
 
-// G. User Profile Update Endpoint
+// G. Forgot Password (no auth) — generates a one-time reset token usable cross-device
+app.post('/api/v1/auth/forgot-password', async (c) => {
+  try {
+    const { email } = await c.req.json();
+    if (!email) return c.json({ error: 'Email required' }, 400);
+
+    const db = drizzle(c.env.DB, { schema });
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
+    if (!user) return c.json({ error: 'Email not found' }, 404);
+
+    const rawToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+    const tokenHash = await hashString(rawToken);
+    const expiresAt = Math.floor(Date.now() / 1000) + 3600;
+
+    await c.env.DB.prepare(
+      'INSERT INTO password_reset_tokens (email, token_hash, expires_at) VALUES (?, ?, ?)'
+    ).bind(email, tokenHash, expiresAt).run();
+
+    return c.json({ token: rawToken });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to generate reset token' }, 500);
+  }
+});
+
+// H. Reset Password (no auth) — verifies token and updates password via Supabase Admin API
+app.post('/api/v1/auth/reset-password', async (c) => {
+  try {
+    const { token, password } = await c.req.json();
+    if (!token || !password) return c.json({ error: 'Token and password required' }, 400);
+    if (password.length < 6) return c.json({ error: 'Password must be at least 6 characters' }, 400);
+
+    const tokenHash = await hashString(token);
+    const now = Math.floor(Date.now() / 1000);
+
+    const row = await c.env.DB.prepare(
+      'SELECT email FROM password_reset_tokens WHERE token_hash = ? AND used = 0 AND expires_at > ? LIMIT 1'
+    ).bind(tokenHash, now).first() as { email: string } | null;
+
+    if (!row) return c.json({ error: 'Invalid or expired reset token' }, 400);
+
+    const db = drizzle(c.env.DB, { schema });
+    const [user] = await db.select().from(schema.users).where(eq(schema.users.email, row.email)).limit(1);
+    if (!user) return c.json({ error: 'User not found' }, 404);
+
+    if (!c.env.SUPABASE_URL || !c.env.SUPABASE_SERVICE_KEY) {
+      return c.json({ error: 'Password reset is not configured on the server' }, 500);
+    }
+
+    const supabaseUrl = c.env.SUPABASE_URL.replace(/\/+$/, '');
+    const resp = await fetch(`${supabaseUrl}/auth/v1/admin/users/${user.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': c.env.SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${c.env.SUPABASE_SERVICE_KEY}`,
+      },
+      body: JSON.stringify({ password }),
+    });
+
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      return c.json({ error: errBody.msg || 'Failed to update password in Supabase' }, 500);
+    }
+
+    await c.env.DB.prepare(
+      'UPDATE password_reset_tokens SET used = 1 WHERE token_hash = ?'
+    ).bind(tokenHash).run();
+
+    await db.update(schema.users).set({ passwordHash: 'set' }).where(eq(schema.users.id, user.id));
+
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to reset password' }, 500);
+  }
+});
+
+// I. User Profile Update Endpoint
 app.put('/api/v1/user/profile', authenticateApiKey, async (c) => {
   try {
     const userId = c.get('userId');
@@ -997,7 +1075,7 @@ app.put('/api/v1/user/profile', authenticateApiKey, async (c) => {
   }
 });
 
-// H. Public Resolve Endpoint (no auth) — used by frontend catch-all redirect
+// J. Public Resolve Endpoint (no auth) — used by frontend catch-all redirect
 app.get('/api/v1/resolve/:code', async (c) => {
   const code = c.req.param('code');
   let linkData: any = null;

@@ -12,6 +12,7 @@ function ResetContent() {
   const [ready, setReady] = useState(false);
   const [checking, setChecking] = useState(true);
   const done = useRef(false);
+  const tokenRef = useRef('');
 
   useEffect(() => {
     if (done.current) return;
@@ -19,6 +20,8 @@ function ResetContent() {
 
     const params = new URLSearchParams(window.location.search);
     const hasCode = params.has('code');
+    const customToken = params.get('token') || '';
+    tokenRef.current = customToken;
 
     const maxAttempts = 20;
     let attempts = 0;
@@ -40,12 +43,16 @@ function ResetContent() {
         }
         await new Promise(r => setTimeout(r, 500));
       }
-      if (hasCode) {
-        setError('This link was opened on a different device than where you requested the reset. Please use the same device, or request a new reset link.');
+      if (customToken) {
+        setReady(true);
+        setChecking(false);
+      } else if (hasCode) {
+        setError('This link was opened on a different device. Please use the same device or request a new reset link.');
+        setChecking(false);
       } else {
         setError('Invalid or expired reset link. Request a new one.');
+        setChecking(false);
       }
-      setChecking(false);
     };
 
     poll();
@@ -58,8 +65,28 @@ function ResetContent() {
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     if (password !== confirm) { setError('Passwords do not match.'); return; }
     setLoading(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    if (updateError) { setError(updateError.message); setLoading(false); return; }
+
+    const customToken = tokenRef.current;
+    if (customToken) {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL!.replace(/\/+$/, '');
+      try {
+        const resp = await fetch(`${apiUrl}/api/v1/auth/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: customToken, password }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to reset password');
+      } catch (err: any) {
+        setError(err.message || 'Failed to reset password');
+        setLoading(false);
+        return;
+      }
+    } else {
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) { setError(updateError.message); setLoading(false); return; }
+    }
+
     setSuccess(true);
     setLoading(false);
     setTimeout(() => { window.location.href = '/'; }, 3000);

@@ -54,25 +54,19 @@ function AuthContent() {
     setResetSent(false);
     if (!email) { setError('Enter your email address.'); return; }
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL!.replace(/\/+$/, '');
       const origin = typeof window !== 'undefined' ? window.location.origin.replace(/\/+$/, '') : '';
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace(/\/+$/, '');
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-      const response = await fetch(`${supabaseUrl}/auth/v1/recover`, {
+      const tokResp = await fetch(`${apiUrl}/api/v1/auth/forgot-password`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': anonKey,
-          'Authorization': `Bearer ${anonKey}`,
-        },
-        body: JSON.stringify({
-          email,
-          redirect_to: `${origin}/auth/reset-password`,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.msg || data.error_description || 'Failed to send reset email.');
-      }
+      const tokData = await tokResp.json().catch(() => ({}));
+      const customToken = tokData?.token || '';
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${origin}/auth/reset-password${customToken ? `?token=${customToken}` : ''}`,
+      });
+      if (error) throw new Error(error.message);
       setResetSent(true);
     } catch (err: any) {
       setError(err.message || 'Failed to send reset email.');

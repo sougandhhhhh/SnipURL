@@ -14,3 +14,4 @@ id = "62b7cb59a99d448fa7d2ba8ef0986bff"
 
 [vars]
 FRONTEND_URL = "https://snipurl2026.vercel.app"
+SUPABASE_URL = "https://wdqjhsfycgmsjbqdzoju.supabase.co"
