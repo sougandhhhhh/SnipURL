@@ -35,6 +35,13 @@ function ResetContent() {
         return;
       }
 
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        setReady(true);
+        setChecking(false);
+        return;
+      }
+
       setError('Invalid or expired reset link. Request a new one.');
       setChecking(false);
     })();
