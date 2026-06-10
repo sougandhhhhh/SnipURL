@@ -9,7 +9,7 @@ import Link from 'next/link';
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, register, signInWithGoogle, loading, user, authResolved } = useSnapStore();
+  const { login, register, signInWithGoogle, loading, user, authResolved, restoreSession } = useSnapStore();
   const [choice, setChoice] = useState<'pick' | 'login' | 'register' | 'forgot'>('pick');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +23,12 @@ function AuthContent() {
     const err = searchParams.get('error');
     if (err) setError(err);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!authResolved) {
+      restoreSession();
+    }
+  }, [authResolved, restoreSession]);
 
   useEffect(() => {
     if (authResolved && user) router.replace('/');
@@ -49,10 +55,24 @@ function AuthContent() {
     if (!email) { setError('Enter your email address.'); return; }
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin.replace(/\/+$/, '') : '';
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/auth/reset-password`,
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace(/\/+$/, '');
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      const response = await fetch(`${supabaseUrl}/auth/v1/recover`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': anonKey,
+          'Authorization': `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({
+          email,
+          redirect_to: `${origin}/auth/reset-password`,
+        }),
       });
-      if (error) throw new Error(error.message);
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.msg || data.error_description || 'Failed to send reset email.');
+      }
       setResetSent(true);
     } catch (err: any) {
       setError(err.message || 'Failed to send reset email.');

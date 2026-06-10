@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useEffect, Suspense, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 
 function ResetContent() {
-  const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
@@ -18,6 +16,9 @@ function ResetContent() {
   useEffect(() => {
     if (done.current) return;
     done.current = true;
+
+    const params = new URLSearchParams(window.location.search);
+    const hasCode = params.has('code');
 
     const maxAttempts = 20;
     let attempts = 0;
@@ -39,7 +40,11 @@ function ResetContent() {
         }
         await new Promise(r => setTimeout(r, 500));
       }
-      setError('Invalid or expired reset link. Request a new one.');
+      if (hasCode) {
+        setError('This link was opened on a different device than where you requested the reset. Please use the same device, or request a new reset link.');
+      } else {
+        setError('Invalid or expired reset link. Request a new one.');
+      }
       setChecking(false);
     };
 
@@ -57,7 +62,7 @@ function ResetContent() {
     if (updateError) { setError(updateError.message); setLoading(false); return; }
     setSuccess(true);
     setLoading(false);
-    setTimeout(() => router.push('/login'), 3000);
+    setTimeout(() => { window.location.href = '/'; }, 3000);
   };
 
   return (
