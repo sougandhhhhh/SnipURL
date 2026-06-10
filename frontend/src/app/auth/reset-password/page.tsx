@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect, Suspense, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 
 function ResetContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
@@ -20,32 +19,32 @@ function ResetContent() {
     if (done.current) return;
     done.current = true;
 
-    (async () => {
-      const code = searchParams.get('code');
+    const maxAttempts = 20;
+    let attempts = 0;
 
-      if (code) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError) {
-          setError(exchangeError.message);
+    const poll = async () => {
+      while (attempts < maxAttempts) {
+        attempts++;
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          setReady(true);
           setChecking(false);
           return;
         }
-        setReady(true);
-        setChecking(false);
-        return;
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          setReady(true);
+          setChecking(false);
+          return;
+        }
+        await new Promise(r => setTimeout(r, 500));
       }
-
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        setReady(true);
-        setChecking(false);
-        return;
-      }
-
       setError('Invalid or expired reset link. Request a new one.');
       setChecking(false);
-    })();
-  }, [searchParams]);
+    };
+
+    poll();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
