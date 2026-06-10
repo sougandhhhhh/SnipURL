@@ -77,6 +77,9 @@ function ResetContent() {
         });
         const data = await resp.json();
         if (!resp.ok) throw new Error(data.error || 'Failed to reset password');
+        if (data.email) {
+          await supabase.auth.signInWithPassword({ email: data.email, password });
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to reset password');
         setLoading(false);
@@ -106,7 +109,7 @@ function ResetContent() {
         {success ? (
           <div className="text-center space-y-4">
             <div className="rounded-xl bg-ecto-green/5 border border-ecto-green/20 p-3 font-mono text-[10px] text-ecto-green/80">
-              Password updated successfully! Redirecting to login...
+              Password updated successfully! Redirecting...
             </div>
           </div>
         ) : checking ? (

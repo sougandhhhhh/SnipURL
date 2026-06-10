@@ -1040,7 +1040,7 @@ app.post('/api/v1/auth/reset-password', async (c) => {
 
     await db.update(schema.users).set({ passwordHash: 'set' }).where(eq(schema.users.id, user.id));
 
-    return c.json({ success: true });
+    return c.json({ success: true, email: user.email });
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to reset password' }, 500);
   }

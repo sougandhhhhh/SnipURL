@@ -156,7 +156,8 @@ function AuthContent() {
                   <p className="font-body text-xs text-ghost-white/40 text-center">
                     Enter your email and we'll send you a reset link.
                   </p>
-                  <button type="submit" disabled={loading} className="btn-ghost w-full justify-center">
+                  <button type="submit" disabled={loading} className="btn-ghost w-full justify-center flex items-center gap-2">
+                    {loading && <span className="h-4 w-4 rounded-full border-2 border-ecto-green/40 border-t-transparent animate-spin" />}
                     {loading ? 'Sending...' : 'Send Reset Link'}
                   </button>
                 </>
